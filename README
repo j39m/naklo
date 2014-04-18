@@ -1,0 +1,5 @@
+naklo is a program written in C that leverages the FLAC C API (and by extension libFLAC) to write FLAC metadata in batches. naklo is not designed to EDIT metadata: only to write it, e.g. immediately after encoding a fresh rip. 
+
+naklo's chief modus operandi involves reading a file (which you, the user, create) that specifies the tags to be written to the files. An example file with the requisite formatting is probably provided; if you cannot find it, you can find one from documentation elsewhere. The tags file should be named "tags," "Tags," or "TAGS." Adding the extension ".txt" to any of these is also fine. But exotic things like "tAgS" or "T@G5" simply won't work. The main specialty 
+
+naklo depends upon libFLAC (the FLAC development libraries --- on Fedora 20 they are found in the package "flac-devel") and on a working GCC. 
