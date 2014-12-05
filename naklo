@@ -1,0 +1,23 @@
+#! /usr/bin/env perl
+
+use strict; 
+use warnings; 
+
+sub gen_files { 
+
+  print STDERR "You have not provided a list of files to "
+    . "operate upon. naklo will assume you mean to operate "
+    . "on all FLAC files in the current working directory.\n\n";
+
+  my $findon = join("/", $ENV{"PWD"}, "*.flac"); 
+  if (system("ls $findon > /dev/null 2>&1") != 0) { 
+    print STDERR "Error finding FLAC files to operate upon "
+      ."in this directory.\n\n"; 
+    exit 1; 
+  } 
+  my $listing = `ls $findon`; 
+} 
+
+& gen_files; 
+
+exit; 
