@@ -1,23 +1,101 @@
 #! /usr/bin/env perl
 
+# Naklo on the river Notec! 
+# It's a sequential tagger intended to slap easily-patterned tags
+# from a controlling text file onto a fresh rip of a bunch of
+# FLAC files. It does so by calling metaflac, a dependency for 
+# this script. 
+
 use strict; 
 use warnings; 
+use Getopt::Std; 
+
+
+# gen_files takes no arguments and produces a list of FLAC files
+# in the current directory for naklo to process. It will be called
+# in the absence of a user-provided list of files to process. 
 
 sub gen_files { 
 
   print STDERR "You have not provided a list of files to "
     . "operate upon. naklo will assume you mean to operate "
-    . "on all FLAC files in the current working directory.\n\n";
+    . "on all FLAC files in the current working directory. \n";
+  print STDERR "Do you wish to continue? [y/n]: ";
+  my $continue = <STDIN>; 
+  $continue = substr ($continue, 0, 1); 
+  if ( $continue eq "k" ) { 
+    print "\nOk\n"; 
+  } elsif ( $continue ne "y" ) { 
+    print "\nExiting.\n"; 
+    exit 0; 
+  } 
 
   my $findon = join("/", $ENV{"PWD"}, "*.flac"); 
+
   if (system("ls $findon > /dev/null 2>&1") != 0) { 
     print STDERR "Error finding FLAC files to operate upon "
       ."in this directory.\n\n"; 
     exit 1; 
   } 
   my $listing = `ls $findon`; 
+
+  # convert ls's newline-split string into a Perl array. 
+  my @listing_arr = split " ", $listing; 
+
+  return @listing_arr
+
 } 
 
-& gen_files; 
+
+# tag_num takes a list of files and tags them sequentially, 
+# assuming that order follows as in the array. 
+
+sub tag_num { 
+
+  my $i = 1; 
+  
+  for my $particular_file (@_) { 
+    # CHANGE ME
+    print "file is $particular_file, numbered $i\n"; 
+    $i++; 
+  } 
+
+  return; 
+
+} 
+
+
+# decomment takes a line (a string) from the control file and 
+# removes comment material from it. (i.e. ignores all characters
+# following a sharp-sign.) It returns the decommented string. 
+
+sub decomment { 
+
+  my ($decomment) = split ("#", $_[0], 2); 
+  
+  return $decomment; 
+
+} 
+
+# token_sprout takes a line (a string) from the control file
+# and tokenizes it such that all its contents are stored in 
+# an array. It returns the tokenized string as an array. 
+
+sub token_sprout { 
+
+  my @tokens = split (" ", $_[0], -1); 
+
+  return @tokens; 
+
+} 
+
+# testing material follows
+
+
+################################################################
+# THE REAL WORK BEGINS HERE
+###################################################
+
+
 
 exit; 
