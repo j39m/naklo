@@ -47,8 +47,8 @@ sub gen_files {
 } 
 
 
-# tag_num takes a list of files and tags them sequentially, 
-# assuming that order follows as in the array. 
+# tag_num takes a list of files and tags track numbers 
+# sequentially, assuming that order follows as in the array. 
 
 sub tag_num { 
 
@@ -71,15 +71,42 @@ sub tag_num {
 
 sub decomment { 
 
-  my ($decomment) = split ("#", $_[0], 2); 
+  my @decomment = split ("#", $_[0], 2); 
+
+  if (@decomment == 0) { # empty starter string splits to nothing
+    return ""; 
+  } 
   
-  return $decomment; 
+  return $decomment[0]; 
 
 } 
 
+
+# split_eqchar takes a line (a string) from the control file
+# and splits it on the "=" char. It returns the split string 
+# as a two-value array. If no "=" is present (e.g. special 
+# directive lines), the second value in the array will be an 
+# empty string (and you should check for this!). Note that 
+# this subroutine trims leading whitespace from the left-hand
+# value --- important per the tagfile spec. 
+
+sub split_eqchar { 
+
+  my @tokens = split ("=", $_[0], 2); 
+
+  if (@tokens == 2) { 
+    $tokens[1] =~ s/^\s+//; # thanks http://perlmaven.com/trim
+  } 
+
+  return @tokens; 
+
+} 
+
+
 # token_sprout takes a line (a string) from the control file
-# and tokenizes it such that all its contents are stored in 
-# an array. It returns the tokenized string as an array. 
+# and splits it on spaces. Note this automatically trims leading
+# white space. This subroutine should be called after splitting 
+# on the "=" char to first partition lines into key-value pairs.
 
 sub token_sprout { 
 
@@ -91,11 +118,14 @@ sub token_sprout {
 
 # testing material follows
 
+exit; 
+
 
 ################################################################
 # THE REAL WORK BEGINS HERE
 ###################################################
 
-
+my %options = (); 
+getopts ("hc:t:l:", \%options); 
 
 exit; 
