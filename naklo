@@ -40,6 +40,7 @@ sub gen_files {
   my $listing = `ls $findon`; 
 
   # convert ls's newline-split string into a Perl array. 
+  # mild danger: non-alphanumeric chars in filenames. 
   my @listing_arr = split " ", $listing; 
 
   return @listing_arr
@@ -116,16 +117,38 @@ sub token_sprout {
 
 } 
 
-# testing material follows
-
-exit; 
-
 
 ################################################################
 # THE REAL WORK BEGINS HERE
 ###################################################
 
 my %options = (); 
-getopts ("hc:t:l:", \%options); 
+getopts ("hsc:l:t:", \%options); 
+# h: help; s: strip; c: control file; l: file list; t: titles.
+
+if (defined $options{h}) { 
+  print "Usage: ./naklo -c [control file] -l [list of files] "
+  . "-t [titles file] \n"; 
+  print "You may wish to consult the README included with this" 
+  . " script.\n"; 
+  exit; 
+} 
+if (!defined $options{c}) { 
+  print STDERR "Error: You must provide a control file. Perhaps"
+  . " you should consult the README.\n"; 
+  exit; 
+} # past this point, control file is defined. Try to open it. 
+
+open my $control_file, "<", $options{c} 
+  or die "Can't open control file '$options{c}'!\n"; 
+
+my @list_of_files = (); 
+if (defined $options{l}) { 
+  open my $list_of_files_fp, "<", $options{l}
+    or die "Can't open file list '$options{l}'!\n"; 
+  @list_of_files = <$list_of_files_fp>; 
+} else { # call gen_files 
+  @list_of_files = & gen_files; 
+} 
 
 exit; 
