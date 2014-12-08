@@ -147,8 +147,10 @@ if (defined $options{l}) {
   open my $list_of_files_fp, "<", $options{l}
     or die "Can't open file list '$options{l}'!\n"; 
   @list_of_files = <$list_of_files_fp>; 
+  chomp (@list_of_files); 
 } else { # call gen_files 
   @list_of_files = & gen_files; 
 } 
+
 
 exit; 
