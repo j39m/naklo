@@ -19,31 +19,40 @@ sub gen_files {
 
   print STDERR "You have not provided a list of files to "
     . "operate upon. naklo will assume you mean to operate "
-    . "on all FLAC files in the current working directory. \n";
-  print STDERR "Do you wish to continue? [y/n]: ";
+    . "on all FLAC files in the current working directory.\n\n";
+
+  my @listing_arr = (); 
+  opendir (my $currentdir, $ENV{"PWD"})
+    or die $!; 
+  while (my $file = readdir($currentdir)) { 
+    next unless ($file =~ m/\.flac$/); 
+    if (-f $file) { 
+      push (@listing_arr, "\"$file\""); # quote filenames
+    } 
+  } 
+
+  closedir ($currentdir); 
+
+  @listing_arr = sort @listing_arr; 
+
+  print STDERR "The listing of files, in order, is given: \n"; 
+  for my $enttry (@listing_arr) { 
+    print "$enttry; "; 
+  } 
+  print "\n\n"; 
+
+  print STDERR " Do you wish to continue? [y/n]: ";
   my $continue = <STDIN>; 
+  print "\n\n"; 
   $continue = substr ($continue, 0, 1); 
   if ( $continue eq "k" ) { 
-    print "\nOk\n"; 
+    print "Ok\n"; 
   } elsif ( $continue ne "y" ) { 
-    print "\nExiting.\n"; 
+    print "Exiting.\n"; 
     exit 0; 
   } 
 
-  my $findon = join("/", $ENV{"PWD"}, "*.flac"); 
-
-  if (system("ls $findon > /dev/null 2>&1") != 0) { 
-    print STDERR "Error finding FLAC files to operate upon "
-      ."in this directory.\n\n"; 
-    exit 1; 
-  } 
-  my $listing = `ls $findon`; 
-
-  # convert ls's newline-split string into a Perl array. 
-  # mild danger: non-alphanumeric chars in filenames. 
-  my @listing_arr = split " ", $listing; 
-
-  return @listing_arr
+  return @listing_arr; 
 
 } 
 
@@ -143,11 +152,15 @@ open my $control_file, "<", $options{c}
   or die "Can't open control file '$options{c}'!\n"; 
 
 my @list_of_files = (); 
+my @tmp = (); 
 if (defined $options{l}) { 
   open my $list_of_files_fp, "<", $options{l}
     or die "Can't open file list '$options{l}'!\n"; 
-  @list_of_files = <$list_of_files_fp>; 
-  chomp (@list_of_files); 
+  my @tmp = <$list_of_files_fp>; 
+  chomp (@tmp); 
+  for my $klaus (@tmp) { 
+    push (@list_of_files, "\"$klaus\""); 
+  } 
 } else { # call gen_files 
   @list_of_files = & gen_files; 
 } 
