@@ -34,6 +34,11 @@ sub gen_files {
   closedir ($currentdir); 
 
   @listing_arr = sort @listing_arr; 
+  my $length = @listing_arr; 
+  if ($length == 0) { 
+    print STDERR "No FLAC files found!\n\n"; 
+    exit 1; 
+  } 
 
   print STDERR "The listing of files, in order, is given: \n"; 
   for my $enttry (@listing_arr) { 
@@ -126,10 +131,14 @@ sub token_sprout {
 
 } 
 
+####################################################
+########### THE REAL WORK BEGINS HERE ##############
+####################################################
 
-################################################################
-# THE REAL WORK BEGINS HERE
-###################################################
+system ("which metaflac > /dev/null 2>&1 "); 
+unless ($? == 0) { 
+  die "You don't have metaflac installed!\n"; 
+} 
 
 my %options = (); 
 getopts ("hsc:l:t:", \%options); 
@@ -148,8 +157,9 @@ if (!defined $options{c}) {
   exit; 
 } # past this point, control file is defined. Try to open it. 
 
-open my $control_file, "<", $options{c} 
+open my $control_file_fp, "<", $options{c} 
   or die "Can't open control file '$options{c}'!\n"; 
+my @control_file_lines = <$control_file_fp>; 
 
 my @list_of_files = (); 
 my @tmp = (); 
@@ -161,9 +171,29 @@ if (defined $options{l}) {
   for my $klaus (@tmp) { 
     push (@list_of_files, "\"$klaus\""); 
   } 
+  # TODO: gen_files checks for existence. so should readdir method. 
 } else { # call gen_files 
   @list_of_files = & gen_files; 
 } 
 
+
+# Here is the BIG loop! 
+# and unless ($range =~ m/^[0-9]+[\-][0-9]+$/) ...
+
+my @leftside = (); # control tokens
+my $rightside = ""; # values
+
+for my $line (@control_file_lines) { 
+  $line = & decomment($line); 
+  unless ( $line =~ m/^\s*$/ ) { # unless whitespace line
+    my @splitline = & split_eqchar($line);
+    if (@splitline != 2) { # if no "=" to split on
+      # special directive
+    } else { 
+      @leftside = & token_sprout($splitline[0]); 
+      $rightside = $splitline[1]; 
+    } 
+  } 
+} 
 
 exit; 
