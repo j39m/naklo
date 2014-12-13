@@ -182,15 +182,23 @@ if (defined $options{l}) {
 
 my @leftside = (); # control tokens
 my $rightside = ""; # values
+my $linecounter = 0; # what line in the control file are we at?
 
-for my $line (@control_file_lines) { 
-  $line = & decomment($line); 
+for my $origline (@control_file_lines) { 
+  $linecounter++; 
+  chomp($origline); 
+  my $line = & decomment($origline); 
   unless ( $line =~ m/^\s*$/ ) { # unless whitespace line
     my @splitline = & split_eqchar($line);
     if (@splitline != 2) { # if no "=" to split on
       # special directive
-    } else { 
+    } else { # if we have a left and right side on "="
       @leftside = & token_sprout($splitline[0]); 
+      unless ( defined $leftside[0] ) { 
+        print "Malformed directive in control file at "
+        ."line $linecounter: \"$origline\"\n"; 
+        exit 1; 
+      } 
       $rightside = $splitline[1]; 
     } 
   } 
