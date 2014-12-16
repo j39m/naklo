@@ -180,26 +180,56 @@ if (defined $options{l}) {
 # Here is the BIG loop! 
 # and unless ($range =~ m/^[0-9]+[\-][0-9]+$/) ...
 
-my @leftside = (); # control tokens
-my $rightside = ""; # values
 my $linecounter = 0; # what line in the control file are we at?
+my $numfiles = @list_of_files; # bounds check for file numbers
 
 for my $origline (@control_file_lines) { 
+
+  # internals to be reset per line. 
+  my @leftside = (); # all control tokens
+  my $rightside = ""; # values
+  my $thesefiles = ""; # metaflac $thesefiles --set-tag ...
+
   $linecounter++; 
   chomp($origline); 
+
   my $line = & decomment($origline); 
+
   unless ( $line =~ m/^\s*$/ ) { # unless whitespace line
+
     my @splitline = & split_eqchar($line);
+
     if (@splitline != 2) { # if no "=" to split on
       # special directive
+
     } else { # if we have a left and right side on "="
+
       @leftside = & token_sprout($splitline[0]); 
       unless ( defined $leftside[0] ) { 
         print "Malformed directive in control file at "
         ."line $linecounter: \"$origline\"\n"; 
         exit 1; 
       } 
-      $rightside = $splitline[1]; 
+      # get number spec from @leftside: 
+      if ($leftside[0] =~ m/^[0-9]/) { 
+        for my $numtok (@leftside) { 
+          if ($numtok =~ m/^[0-9]+$/) { 
+            die "Invalid track number spec at line $linecounter:"
+            . " \"$numtok\"" if ( ($numtok > $numfiles) 
+            or ($numtok < 1) ); 
+            # REPLACE BELOW TWO LINES FOR PROPER RANGING ETC. 
+            $thesefiles += " "; 
+            $thesefiles += $list_of_files[$numtok-1]; 
+          } else { # no more numbers to parse 
+            last; 
+          } 
+        } 
+      } else { # no number spec; assume _all_ files to be proc'd
+
+      } 
+
+      $rightside = $splitline[1];
+
     } 
   } 
 } 
