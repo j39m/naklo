@@ -131,6 +131,14 @@ sub token_sprout {
 
 } 
 
+
+# is_valid_tag takes a string and tests it to see if it is a 
+# valid tag that metaflac can apply safely. 
+
+sub is_valid_tag { 
+
+} 
+
 ####################################################
 ########### THE REAL WORK BEGINS HERE ##############
 ####################################################
@@ -171,7 +179,6 @@ if (defined $options{l}) {
   for my $klaus (@tmp) { 
     push (@list_of_files, "\"$klaus\""); 
   } 
-  # TODO: gen_files checks for existence. so should readdir method. 
 } else { # call gen_files 
   @list_of_files = & gen_files; 
 } 
@@ -200,7 +207,7 @@ for my $origline (@control_file_lines) {
     my @splitline = & split_eqchar($line);
 
     if (@splitline != 2) { # if no "=" to split on
-      # special directive
+      print "Special directive detected at $linecounter.\n"; 
 
     } else { # if we have a left and right side on "="
 
@@ -210,24 +217,50 @@ for my $origline (@control_file_lines) {
         ."line $linecounter: \"$origline\"\n"; 
         exit 1; 
       } 
-      # get number spec from @leftside: 
+      # get number spec from @leftside.
+      # if spec is defined and number appears at left:
       if ($leftside[0] =~ m/^[0-9]/) { 
         for my $numtok (@leftside) { 
-          if ($numtok =~ m/^[0-9]+$/) { 
-            die "Invalid track number spec at line $linecounter:"
-            . " \"$numtok\"" if ( ($numtok > $numfiles) 
-            or ($numtok < 1) ); 
-            # REPLACE BELOW TWO LINES FOR PROPER RANGING ETC. 
-            $thesefiles += " "; 
-            $thesefiles += $list_of_files[$numtok-1]; 
-          } else { # no more numbers to parse 
-            last; 
+
+          if ($numtok =~ m/^[0-9]+-+[0-9]+$/){ # if range spec: 
+            # matched regex exactly means safe to split on "-"
+            my @bounds = split ( "-", $numtok, 2); 
+            my $lowerbound = $bounds[0]; 
+            my $upperbound = $bounds[1]; 
+            print "Invalid track number spec at line $linecounter:"
+              . "\"$numtok\"" and exit 1 if ( 
+              ($lowerbound < 1) or 
+              ($upperbound < 1) or 
+              ($lowerbound > $upperbound) or 
+              ($lowerbound > $numfiles) or 
+              ($upperbound > $numfiles) ); 
+            # now gather up all files in range! 
+            while ($lowerbound <= $upperbound) { 
+              $thesefiles = $thesefiles . " "; 
+              $thesefiles = $thesefiles . $list_of_files[$lowerbound-1]; 
+              $lowerbound++; 
+            } 
+
+          } elsif ($numtok =~ m/^[0-9]+$/) { # if single number
+            print "Invalid track number spec at line $linecounter:"
+              . " \"$numtok\"" and exit 1 if ( 
+              ($numtok > $numfiles) or
+              ($numtok < 1) ); 
+            $thesefiles = $thesefiles . " "; 
+            $thesefiles = $thesefiles . $list_of_files[$numtok-1]; 
+
+          } else { # bad num spec or no more
+ #           die "Invalid track number spec at line $linecounter:"
+ #             . "\"$numtok\""; 
+ #           exit 1; 
+
           } 
+
         } 
       } else { # no number spec; assume _all_ files to be proc'd
 
       } 
-
+      print "$thesefiles\n"; 
       $rightside = $splitline[1];
 
     } 
