@@ -1,16 +1,16 @@
-# THE FIRST EVER TAG FILE WRITTEN FOR NAKLO
+// THE FIRST EVER TAG FILE WRITTEN FOR NAKLO
 
-# album-wide constants
+// album-wide constants
 albumartist = Gil Shaham
 artist = Gil Shaham
 disctotal = 2
 
-# disparate tags
+// disparate tags
 01-07 12-15 conductor = David Robertson
 08-11 conductor = Gil Shaham
 16-18 conductor = Juanjo Mena
 
-# tags by disc 
+// tags by disc 
 
 01-11 discnumber = 1
 

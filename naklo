@@ -85,11 +85,12 @@ sub tag_num {
 
 # decomment takes a line (a string) from the control file and 
 # removes comment material from it. (i.e. ignores all characters
-# following a sharp-sign.) It returns the decommented string. 
+# following a pair of forward slashes.) It returns the decommented 
+# string. 
 
 sub decomment { 
 
-  my @decomment = split ("#", $_[0], 2); 
+  my @decomment = split ("//", $_[0], 2); 
 
   if (@decomment == 0) { # empty starter string splits to nothing
     return ""; 
