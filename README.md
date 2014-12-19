@@ -1,6 +1,6 @@
 # naklo
 
-... is a Perl script that calls metaflac to write FLAC metadata in batches. It operates by following a user-provided control file instructing it on how to tag things. A reference tag file that contains many examples of how to tag should be included with this script. 
+... is a Perl script that calls metaflac to write FLAC metadata in batches. It operates by following a user-provided control file instructing it on how to tag things. A reference tag file that contains many examples of how to tag should be included with this script. Two references files in particular give examples of how to format metadata directives ("control" and "titles," which are respectively to be used with the "-c" and "-t" options). 
 
 Be warned: naklo is neither patient nor kind (nor is it boastful, envious, or proud). It will ravenously go through all FLAC files (if not specified by user, assumed to be *all* FLAC files in the working directory --- it will ask for confirmation about that case) and tag everything. There are no dry runs, no previews. Use caution, and remember that "metaflac --remove-all-tags" is your friend. 
 
