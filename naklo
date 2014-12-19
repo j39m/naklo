@@ -103,14 +103,16 @@ sub decomment {
 # directive lines), the second value in the array will be an 
 # empty string (and you should check for this!). Note that 
 # this subroutine trims leading whitespace from the left-hand
-# value --- important per the tagfile spec. 
+# value and trailing whitespace from the right-hand value; 
+# this is important per the tagfile spec. 
 
 sub split_eqchar { 
 
   my @tokens = split ("=", $_[0], 2); 
 
   if (@tokens == 2) { 
-    $tokens[1] =~ s/^\s+//; # thanks http://perlmaven.com/trim
+    $tokens[0] =~ s/\s+$//; # thanks http://perlmaven.com/trim 
+    $tokens[1] =~ s/^\s+//; 
   } 
 
   return @tokens; 
@@ -133,9 +135,18 @@ sub token_sprout {
 
 
 # is_valid_tag takes a string and tests it to see if it is a 
-# valid tag that metaflac can apply safely. 
+# valid tag that we can apply safely. 
 
 sub is_valid_tag { 
+
+  return (($_[0] eq "artist")
+      or ($_[0] eq "albumartist")
+      or ($_[0] eq "title")
+      or ($_[0] eq "album")
+      or ($_[0] eq "performer")
+      or ($_[0] eq "conductor")
+      or ($_[0] eq "location")
+      or ($_[0] eq "composer") );
 
 } 
 
@@ -195,7 +206,8 @@ for my $origline (@control_file_lines) {
   # internals to be reset per line. 
   my @leftside = (); # all control tokens
   my $rightside = ""; # values
-  my $thesefiles = ""; # metaflac $thesefiles --set-tag ...
+  my $thesefiles = ""; # "metaflac $thesefiles --set-tag ..."
+  my $tagname = ""; # "... --set-tag $tagname= ..."
 
   $linecounter++; 
   chomp($origline); 
@@ -236,8 +248,8 @@ for my $origline (@control_file_lines) {
               ($upperbound > $numfiles) ); 
             # now gather up all files in range! 
             while ($lowerbound <= $upperbound) { 
-              $thesefiles = $thesefiles . " "; 
-              $thesefiles = $thesefiles . $list_of_files[$lowerbound-1]; 
+              $thesefiles = join (" ", $thesefiles, 
+                $list_of_files[$lowerbound-1]); 
               $lowerbound++; 
             } 
 
@@ -246,25 +258,37 @@ for my $origline (@control_file_lines) {
               . " \"$numtok\"" and exit 1 if ( 
               ($numtok > $numfiles) or
               ($numtok < 1) ); 
-            $thesefiles = $thesefiles . " "; 
-            $thesefiles = $thesefiles . $list_of_files[$numtok-1]; 
+            $thesefiles = join (" ", 
+              $thesefiles, $list_of_files[$numtok-1]); 
 
           } else { # bad num spec or no more
- #           die "Invalid track number spec at line $linecounter:"
- #             . "\"$numtok\""; 
- #           exit 1; 
+            unless ( &is_valid_tag($numtok) ) { 
+              print "Invalid directive at line $linecounter:"
+                . " \"$numtok\"\n" and exit 1; 
+            } # otherwise, if above doesn't kill, have a tag!
+            $tagname = $numtok; # otherwise it's a tagname 
 
           } 
 
-        } 
+        }  # ENDS possible number token iteration. 
+
       } else { # no number spec; assume _all_ files to be proc'd
+        for my $filename (@list_of_files) { 
+          $thesefiles = join (" ", $thesefiles, $filename); 
+        } 
+        unless ( &is_valid_tag($leftside[-1]) ) { 
+          print "Invalid directive at line $linecounter:"
+            . " \"$leftside[0]\"\n" and exit 1; 
+        } # otherwise, if above doesn't kill, we have a tag
+        $tagname = $leftside[-1]; 
 
       } 
-      print "$thesefiles\n"; 
       $rightside = $splitline[1];
+
+      print "call: metaflac $thesefiles --set-tag $tagname='$rightside'\n"; 
 
     } 
   } 
 } 
 
-exit; 
+exit 0; 
