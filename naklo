@@ -168,8 +168,8 @@ unless ($? == 0) {
 } 
 
 my %options = (); 
-getopts ("hsc:l:t:", \%options); 
-# h: help; s: strip; c: control file; l: file list; t: titles.
+getopts ("hc:l:t:n", \%options); 
+# h: help; c: control file; l: file list; t: titles; n: no-number
 
 if (defined $options{h}) { 
   print "Usage: ./naklo -c [control file] -l [list of files] "
@@ -218,7 +218,9 @@ if (defined $options{c} ) {
   my @control_file_lines = <$control_file_fp>; 
 
   # tag track numbers: 
-  & tag_num(@list_of_files); 
+  unless (defined $options{n} ){ 
+    & tag_num(@list_of_files); 
+  } 
 
   # Here is the BIG loop over the control file! 
   # and unless ($range =~ m/^[0-9]+[\-][0-9]+$/) ...
