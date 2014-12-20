@@ -311,10 +311,9 @@ if (defined $options{c} ) {
 
         } 
         $rightside = $splitline[1];
-        $rightside =~ s/\"/\\\"/; 
+        $rightside =~ s/'/'"'"'/; 
 
-        #print "call: metaflac $thesefiles --set-tag $tagname=\"$rightside\"\n"; 
-        system("metaflac $thesefiles --set-tag $tagname=\"$rightside\""); 
+        system("metaflac $thesefiles --set-tag $tagname='$rightside'"); 
 
       } 
     } 
@@ -337,8 +336,11 @@ if (defined $options{t}) {
     my $i = 0; 
     for my $title (@titles_file_lines) { 
       chomp ($title); 
-      #print "call: metaflac $list_of_files[$i] --set-tag title=\"$title\"\n"; 
-      system("metaflac $list_of_files[$i] --set-tag title=\"$title\""); 
+      # turn single quotes into a separate substring bounded by 
+      # double quotes. The resulting substrings on either side
+      # are spliced on, bookended with single quotes. 
+      $title =~ s/'/'"'"'/; 
+      system("metaflac $list_of_files[$i] --set-tag title='$title'"); 
       $i++; 
     } 
 
