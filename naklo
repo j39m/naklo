@@ -167,7 +167,7 @@ sub is_valid_tag {
 system ("which metaflac > /dev/null 2>&1 "); 
 unless ($? == 0) { 
   die "You don't have metaflac installed!\n"; 
-n 
+} 
 
 my %options = (); 
 getopts ("hc:l:t:n", \%options); 
