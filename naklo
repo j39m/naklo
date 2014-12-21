@@ -154,7 +154,8 @@ sub is_valid_tag {
       or ($_[0] eq "discsubtitle")
       or ($_[0] eq "location")
       or ($_[0] eq "date")
-      or ($_[0] eq "composer") );
+      or ($_[0] eq "composer") 
+      or ($_[0] eq "arranger") );
 
 } 
 
@@ -165,7 +166,7 @@ sub is_valid_tag {
 system ("which metaflac > /dev/null 2>&1 "); 
 unless ($? == 0) { 
   die "You don't have metaflac installed!\n"; 
-} 
+n 
 
 my %options = (); 
 getopts ("hc:l:t:n", \%options); 
