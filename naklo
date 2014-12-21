@@ -145,17 +145,18 @@ sub is_valid_tag {
 
   return (($_[0] eq "artist")
       or ($_[0] eq "albumartist")
-      or ($_[0] eq "title")
-      or ($_[0] eq "album")
       or ($_[0] eq "performer")
       or ($_[0] eq "conductor")
-      or ($_[0] eq "discnumber")
-      or ($_[0] eq "disctotal")
-      or ($_[0] eq "discsubtitle")
+      or ($_[0] eq "composer") 
+      or ($_[0] eq "arranger") 
+      or ($_[0] eq "lyricist") 
+      or ($_[0] eq "title")
+      or ($_[0] eq "album")
       or ($_[0] eq "location")
       or ($_[0] eq "date")
-      or ($_[0] eq "composer") 
-      or ($_[0] eq "arranger") );
+      or ($_[0] eq "discnumber")
+      or ($_[0] eq "disctotal")
+      or ($_[0] eq "discsubtitle") ); 
 
 } 
 
