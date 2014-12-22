@@ -154,6 +154,7 @@ sub is_valid_tag {
       or ($_[0] eq "album")
       or ($_[0] eq "location")
       or ($_[0] eq "date")
+      or ($_[0] eq "genre")
       or ($_[0] eq "discnumber")
       or ($_[0] eq "disctotal")
       or ($_[0] eq "discsubtitle") ); 
@@ -352,5 +353,6 @@ if (defined $options{t}) {
 
 } 
 
+print "Success!\n"; 
 
 exit 0; 
