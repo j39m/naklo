@@ -14,7 +14,6 @@ use Getopt::Std;
 # gen_files takes no arguments and produces a list of FLAC files
 # in the current directory for naklo to process. It will be called
 # in the absence of a user-provided list of files to process.
-
 sub gen_files {
 
     print STDERR "You have not provided a list of files to "
@@ -34,7 +33,7 @@ sub gen_files {
     closedir ($currentdir);
   
     @listing_arr = sort @listing_arr;
-    my $length = @listing_arr;
+    my $length = scalar(@listing_arr);
     if ($length == 0) {
         print STDERR "No FLAC files found!\n\n";
         exit 1;
@@ -64,11 +63,10 @@ sub gen_files {
 
 # tag_num takes a list of files and tags track numbers
 # sequentially, assuming that order follows as in the array.
-
 sub tag_num {
 
     my $i = 1;
-    my $length = @_;
+    my $length = scalar(@_);
   
     for my $particular_file (@_) {
         # CHANGE ME
@@ -87,12 +85,11 @@ sub tag_num {
 # removes comment material from it. (i.e. ignores all characters
 # following a pair of forward slashes.) It returns the decommented
 # string.
-
 sub decomment {
 
     my @decomment = split ("//", $_[0], 2);
   
-    if (@decomment == 0) { # empty starter string splits to nothing
+    if (scalar(@decomment) == 0) { # empty starter string splits to nothing
         return "";
     }
   
@@ -109,18 +106,14 @@ sub decomment {
 # this subroutine trims leading whitespace from the left-hand
 # value and trailing whitespace from the right-hand value;
 # this is important per the tagfile spec.
-
 sub split_eqchar {
 
     my @tokens = split ("=", $_[0], 2);
-  
-    if (@tokens == 2) {
+    if (scalar(@tokens) == 2) {
         $tokens[0] =~ s/\s+$//; # thanks http://perlmaven.com/trim
         $tokens[1] =~ s/^\s+//;
     }
-  
     return @tokens;
-  
 }
 
 
@@ -128,19 +121,15 @@ sub split_eqchar {
 # and splits it on spaces. Note this automatically trims leading
 # white space. This subroutine should be called after splitting
 # on the "=" char to first partition lines into key-value pairs.
-
 sub token_sprout {
-
-    my @tokens = split (" ", $_[0], -1);
-  
-    return @tokens;
-  
+    my ($line) = @_;
+    my @tokens = split (" ", $line, -1);
+    return \@tokens;
 }
 
 
 # is_valid_tag takes a string and tests it to see if it is a
 # valid tag that we can apply safely.
-
 sub is_valid_tag {
 
     return (($_[0] eq "artist")
@@ -158,8 +147,140 @@ sub is_valid_tag {
             or ($_[0] eq "discnumber")
             or ($_[0] eq "disctotal")
             or ($_[0] eq "discsubtitle") );
-      
 }
+
+
+# check_control_file iterates across the control file and
+# ensures all directives are properly formed.
+# arguments:
+#   1. control file fp
+#   2. number of files
+sub check_control_file {
+    
+    my ($cffh, $numfiles) = @_;
+    my $linecounter = 0;
+    my @splitline = ();
+    my $left = ();
+    my $right = "";
+
+    my $errors_found = 0;
+
+    seek($cffh, 0, 0);
+    for my $line (<$cffh>) {
+
+        $linecounter++;
+        chomp($line);
+        $line = decomment($line);
+        
+        # HURDLE 1: empty line?
+        next if $line =~ m/^\s*$/;
+
+        # HURDLE 2: malformed directive?
+        @splitline = split_eqchar($line);
+        if (scalar(@splitline) != 2) {
+            print "Malformed directive at line $linecounter.\n";
+            $errors_found++;
+            next;
+        }
+
+        # HURDLE 3: proper tokens on both sides?
+        $left = token_sprout($splitline[0]);
+        $right = $splitline[1];
+        if (!scalar(@{$left}) || !defined($right)) {
+            print "Malformed directive at line $linecounter.\n";
+            $errors_found++;
+            next;
+        }
+
+        # HURDLE 4: only number specs on the left? 
+        # HURDLE 5: does the left-side end only at a valid tag?
+        # HURDLE 6: are the number specs all in range?
+        my $i = 0;
+        for my $ns (@{$left}) {
+            if ($ns !~ m/^[0-9]+$/
+                    and $ns !~ m/^[0-9]+-[0-9]+$/
+                    and !is_valid_tag($ns)) {
+                print "Malformed number spec at line $linecounter.\n";
+                $errors_found++;
+            }
+            if ($ns =~ m/^([0-9]+)$/) {
+                if (($1 < 1) || ($1 > $numfiles)) {
+                    print "Number spec out-of-bounds at line "
+                        . "$linecounter.\n";
+                    $errors_found++;
+                }
+            }
+            if ($ns =~ m/^([0-9]+)-([0-9]+)$/) {
+                if (($1 < 1) || ($1 > $numfiles)) {
+                    print "Number spec out-of-bounds at line "
+                        . "$linecounter.\n";
+                    $errors_found++;
+                }
+                if (($2 < 1) || ($2 > $numfiles)) {
+                    print "Number spec out-of-bounds at line "
+                        . "$linecounter.\n";
+                    $errors_found++;
+                }
+                if ($2 <= $1) {
+                    print "Number spec is ill-formed at line "
+                        . "$linecounter.\n";
+                    $errors_found++;
+                }
+            }
+            if (is_valid_tag($ns) && $i != scalar(@{$left}) - 1) {
+                print "Premature left-side tag name at line "
+                      . "$linecounter.\n";
+                $errors_found++;
+            }
+            $i++;
+        }
+
+    }
+    seek($cffh, 0, 0);
+    return $errors_found;
+}
+
+
+# accumulate filenames from a number spec.
+# arguments:
+#   1. number spec array
+#   2. list of files (as an array reference)
+# returns:
+#   the space-separated string of requested files
+sub accumulate_files {
+
+    my ($nspec, $flist) = @_;
+    my @retv = ();
+
+    for my $ns (@{$nspec}) {
+
+        # single number
+        if ($ns =~ m/^([0-9]+)$/) {
+            push(@retv, $flist->[$ns]);
+
+        # range of numbers
+        } elsif ($ns =~ m/^([0-9]+)-([0-9]+)$/) {
+            my $base = int($1);
+            my $bound = int($2);
+            while ($base <= $bound) {
+                push(@retv, $flist->[$base]);
+                $base++;
+            }
+        
+        # hit the end - a tag name
+        } else {
+            last;
+        }
+
+    }
+
+    if (!scalar(@retv)) {
+        return join(" ", @{$flist});
+    }
+    return join(" ", @retv);
+
+}
+
 
 ####################################################
 ########### THE REAL WORK BEGINS HERE ##############
@@ -209,7 +330,6 @@ if (defined $options{l}) {
   
 } else { # call gen_files
     @list_of_files = gen_files;
-  
 }
 
 
@@ -219,109 +339,44 @@ if (defined $options{c} ) {
     open my $control_file_fp, "<", $options{c}
         or die "Can't open control file '$options{c}'!\n";
     my @control_file_lines = <$control_file_fp>;
+
+    if (check_control_file($control_file_fp, scalar(@list_of_files))) {
+        exit 1;
+    }
   
     # tag track numbers:
-    unless (defined $options{n} ){
+    unless (defined $options{n}) {
         tag_num(@list_of_files);
     }
   
-    # Here is the BIG loop over the control file!
-    # and unless ($range =~ m/^[0-9]+[\-][0-9]+$/) ...
+    my $linecounter = 0;
+    my $numfiles = scalar(@list_of_files);
   
-    my $linecounter = 0; # what line in the control file are we at?
-    my $numfiles = @list_of_files; # bounds check for file numbers
-  
-    for my $origline (@control_file_lines) {
-  
-        # internals to be reset per line.
-        my @leftside = (); # all control tokens
-        my $rightside = ""; # values
-        my $thesefiles = ""; # "metaflac $thesefiles --set-tag ..."
-        my $tagname = ""; # "... --set-tag $tagname= ..."
-    
+    my @splitline = (); # the line split on "="
+    my $leftside = (); # all control tokens
+    my $rightside = ""; # values
+
+    my $thesefiles = ""; # "metaflac $thesefiles --set-tag ..."
+    my $tagname = ""; # "... --set-tag $tagname= ..."
+
+    for my $line (@control_file_lines) {
+
         $linecounter++;
-        chomp($origline);
-    
-        my $line = decomment($origline);
-    
-        unless ($line =~ m/^\s*$/) { # unless whitespace line
-    
-            my @splitline = split_eqchar($line);
-      
-            if (@splitline != 2) { # if no "=" to split on
-                print "Malformed directive at line $linecounter.\n"
-                    and exit 1;
-          
-            } else { # if we have a left and right side on "="
-      
-                @leftside = token_sprout($splitline[0]);
-                unless (defined $leftside[0]) {
-                    print "Malformed directive in control file at "
-                    ."line $linecounter: \"$origline\"\n";
-                    exit 1;
-                }
-                # get number spec from @leftside.
-                # if spec is defined and number appears at left:
-                if ($leftside[0] =~ m/^[0-9]/) {
-                    for my $numtok (@leftside) {
-          
-                        if ($numtok =~ m/^[0-9]+-[0-9]+$/){ # if range spec:
-                            # matched regex exactly means safe to split on "-"
-                            my @bounds = split ("-", $numtok, 2);
-                            my $lowerbound = $bounds[0];
-                            my $upperbound = $bounds[1];
-                            print "Invalid track number spec at line $linecounter:"
-                                . "\"$numtok\"\n" and exit 1 if (
-                                ($lowerbound < 1) or
-                                ($upperbound < 1) or
-                                ($lowerbound > $upperbound) or
-                                ($lowerbound > $numfiles) or
-                                ($upperbound > $numfiles) );
-                            # now gather up all files in range!
-                            while ($lowerbound <= $upperbound) {
-                                $thesefiles = join (" ", $thesefiles,
-                                    $list_of_files[$lowerbound-1]);
-                                $lowerbound++;
-                            }
-              
-                        } elsif ($numtok =~ m/^[0-9]+$/) { # if single number
-                            print "Invalid track number spec at line $linecounter:"
-                                . " \"$numtok\"\n" and exit 1 if (
-                                ($numtok > $numfiles) or
-                                ($numtok < 1) );
-                            $thesefiles = join (" ",
-                                $thesefiles, $list_of_files[$numtok-1]);
-                
-                        } else { # bad num spec or no more
-                            unless (is_valid_tag($numtok)) {
-                                print "Invalid directive at line $linecounter:"
-                                    . " \"$numtok\"\n" and exit 1;
-                            } # otherwise, if above doesn't kill, have a tag!
-                            $tagname = $numtok; # otherwise it's a tagname
-              
-                        }
-            
-                    }  # ENDS possible number token iteration.
-          
-                # otherwise, no hay number spec; assume operation over ALL files
-                } else {
-                    for my $filename (@list_of_files) {
-                        $thesefiles = join (" ", $thesefiles, $filename);
-                    }
-                    unless (is_valid_tag($leftside[-1])) {
-                        print "Invalid directive at line $linecounter:"
-                            . " \"$leftside[-1]\"\n" and exit 1;
-                    } # otherwise, if above doesn't kill, we have a tag
-                    $tagname = $leftside[-1];
-          
-                }
-                $rightside = $splitline[1];
-                $rightside =~ s/'/'"'"'/;
-        
-                system("metaflac $thesefiles --set-tag $tagname='$rightside'");
-        
-            }
-        }
+
+        chomp($line);
+        my $line = decomment($line);
+        next if ($line =~ m/^\s*$/);
+
+        @splitline = split_eqchar($line);
+        $leftside = token_sprout($splitline[0]);
+        $rightside = $splitline[1];
+        $rightside =~ s/'/'"'"'/;
+
+        $thesefiles = accumulate_files($leftside, \@list_of_files);
+        $tagname = $leftside->[-1];
+
+        system("metaflac $thesefiles --set-tag $tagname='$rightside'");
+
     }
 }
 
@@ -331,9 +386,9 @@ if (defined $options{t}) {
         or die "Can't open titles file '$options{t}'!\n";
     my @titles_file_lines = <$titles_file_fp>;
   
-    my $num_titles = @titles_file_lines;
+    my $num_titles = scalar(@titles_file_lines);
   
-    if ($num_titles != @list_of_files) {
+    if ($num_titles != scalar(@list_of_files)) {
         print "Number of titles does not match number of files!\n"
             and exit 1;
       
@@ -341,9 +396,6 @@ if (defined $options{t}) {
         my $i = 0;
         for my $title (@titles_file_lines) {
             chomp ($title);
-            # turn single quotes into a separate substring bounded by
-            # double quotes. The resulting substrings on either side
-            # are spliced on, bookended with single quotes.
             $title =~ s/'/'"'"'/g;
             system("metaflac $list_of_files[$i] --set-tag title='$title'");
             $i++;
