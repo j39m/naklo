@@ -256,14 +256,14 @@ sub accumulate_files {
 
         # single number
         if ($ns =~ m/^([0-9]+)$/) {
-            push(@retv, $flist->[$ns]);
+            push(@retv, $flist->[$ns-1]);
 
         # range of numbers
         } elsif ($ns =~ m/^([0-9]+)-([0-9]+)$/) {
             my $base = int($1);
             my $bound = int($2);
             while ($base <= $bound) {
-                push(@retv, $flist->[$base]);
+                push(@retv, $flist->[$base-1]);
                 $base++;
             }
         
