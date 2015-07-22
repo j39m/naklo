@@ -291,18 +291,18 @@ unless ($? == 0) {
     die "You don't have metaflac installed!\n";
 }
 
-my %options = ();
-getopts ("hc:l:t:n", \%options);
+my $options = {};
+getopts ("hc:l:t:n", $options);
 # h: help; c: control file; l: file list; t: titles; n: no-number
 
-if (defined $options{h}) {
+if (defined $options->{"h"}) {
     print "Usage: ./naklo -c [control file] -l [list of files] "
     . "-t [titles file] \n";
     print "You may wish to consult the README included with this"
     . " script.\n";
     exit;
 }
-if ( (!defined $options{c}) and (!defined $options{t}) ) {
+if ( (!defined $options->{"c"}) and (!defined $options->{"t"}) ) {
     print STDERR "Error: You must provide either a control file"
     . " or a titles file. Perhaps you should consult the README.\n";
     exit 1;
@@ -314,9 +314,9 @@ if ( (!defined $options{c}) and (!defined $options{t}) ) {
 # newline-split file listings.
 my @list_of_files = ();
 my @tmp = ();
-if (defined $options{l}) {
-    open my $list_of_files_fp, "<", $options{l}
-        or die "Can't open file list '$options{l}'!\n";
+if (defined $options->{"l"}) {
+    open my $list_of_files_fp, "<", $options->{"l"}
+        or die "Can't open file list `$options->{'l'}'!\n";
     my @tmp = <$list_of_files_fp>;
     # trim newline, check existence, quote filenames
     chomp (@tmp);
@@ -334,10 +334,10 @@ if (defined $options{l}) {
 
 
 
-if (defined $options{c} ) {
+if (defined $options->{"c"} ) {
 
-    open my $control_file_fp, "<", $options{c}
-        or die "Can't open control file '$options{c}'!\n";
+    open my $control_file_fp, "<", $options->{"c"}
+        or die "Can't open control file `$options->{'c'}'!\n";
     my @control_file_lines = <$control_file_fp>;
 
     if (check_control_file($control_file_fp, scalar(@list_of_files))) {
@@ -345,7 +345,7 @@ if (defined $options{c} ) {
     }
   
     # tag track numbers:
-    unless (defined $options{n}) {
+    unless (defined $options->{"n"}) {
         tag_num(@list_of_files);
     }
   
@@ -380,10 +380,10 @@ if (defined $options{c} ) {
     }
 }
 
-if (defined $options{t}) {
+if (defined $options->{"t"}) {
 
-    open my $titles_file_fp, "<", $options{t}
-        or die "Can't open titles file '$options{t}'!\n";
+    open my $titles_file_fp, "<", $options->{"t"}
+        or die "Can't open titles file `$options->{'t'}'!\n";
     my @titles_file_lines = <$titles_file_fp>;
   
     my $num_titles = scalar(@titles_file_lines);
