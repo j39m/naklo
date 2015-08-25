@@ -83,12 +83,9 @@ sub tag_num {
 # string.
 sub decomment {
 
-    my @decomment = split ("//", $_[0], 2);
-  
-    if (scalar(@decomment) == 0) { # empty starter string splits to nothing
-        return "";
-    }
-    return $decomment[0];
+    my ($line) = @_;
+    while ($line =~ s%\s+//.*$%%g) {;}
+    return $line;
 }
 
 
