@@ -26,7 +26,7 @@ sub gen_files {
     while (my $file = readdir($currentdir)) {
         next unless ($file =~ m/\.flac$/);
         if (-f $file) {
-            push (@listing_arr, "\"$file\""); # quote filenames
+            push (@listing_arr, $file);
         }
     }
   
@@ -244,18 +244,16 @@ sub check_control_file {
 #   1. number spec array
 #   2. list of files (as an array reference)
 # returns:
-#   the space-separated string of requested files
+#   the array of files specified by the number spec
 sub accumulate_files {
 
     my ($nspec, $flist) = @_;
     my @retv = ();
 
     for my $ns (@{$nspec}) {
-
         # single number
         if ($ns =~ m/^([0-9]+)$/) {
             push(@retv, $flist->[$ns-1]);
-
         # range of numbers
         } elsif ($ns =~ m/^([0-9]+)-([0-9]+)$/) {
             my $base = int($1);
@@ -264,19 +262,17 @@ sub accumulate_files {
                 push(@retv, $flist->[$base-1]);
                 $base++;
             }
-        
         # hit the end - a tag name
         } else {
             last;
         }
-
     }
 
+    # implicitly, no number spec means "every file"
     if (!scalar(@retv)) {
-        return join(" ", @{$flist});
+        return @{$flist};
     }
-    return join(" ", @retv);
-
+    return @retv;
 }
 
 
@@ -316,7 +312,6 @@ if (defined $options->{"l"}) {
     open my $list_of_files_fp, "<", $options->{"l"}
         or die "Can't open file list `$options->{'l'}'!\n";
     my @tmp = <$list_of_files_fp>;
-    # trim newline, check existence, quote filenames
     chomp (@tmp);
     for my $tmp_iterator (@tmp) {
         unless (open my $file_iterator, "<", $tmp_iterator) {
@@ -354,15 +349,16 @@ if (defined $options->{"c"} ) {
     my $leftside = (); # all control tokens
     my $rightside = ""; # values
 
-    my $thesefiles = ""; # "metaflac $thesefiles --set-tag ..."
-    my $tagname = ""; # "... --set-tag $tagname= ..."
+    my $tagname = "";       # "... --set-tag $tagname= ..."
+    my @thesefiles = ();    # files to operate upon
+    my @command = ();       # overall command that we will execute
 
     for my $line (@control_file_lines) {
 
         $linecounter++;
 
         chomp($line);
-        my $line = decomment($line);
+        $line = decomment($line);
         next if ($line =~ m/^\s*$/);
 
         @splitline = split_eqchar($line);
@@ -370,11 +366,14 @@ if (defined $options->{"c"} ) {
         $rightside = $splitline[1];
         $rightside =~ s/'/'"'"'/;
 
-        $thesefiles = accumulate_files($leftside, \@list_of_files);
+        @thesefiles = accumulate_files($leftside, \@list_of_files);
         $tagname = $leftside->[-1];
+        @command = ("metaflac", "--set-tag", "$tagname=$rightside");
+        for my $file (@thesefiles) {
+            push(@command, $file);
+        }
 
-        system("metaflac $thesefiles --set-tag $tagname='$rightside'");
-
+        system(@command);
     }
 }
 
