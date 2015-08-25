@@ -376,17 +376,17 @@ if (defined $options->{"t"}) {
     my @titles_file_lines = <$titles_file_fp>;
   
     my $num_titles = scalar(@titles_file_lines);
+    my $num_files = scalar(@list_of_files);
   
-    if ($num_titles != scalar(@list_of_files)) {
+    if ($num_titles != $num_files) {
         print "Number of titles does not match number of files!\n"
             and exit 1;
-    } else {
-        my $i = 0;
-        for my $title (@titles_file_lines) {
-            chomp ($title);
-            system("metaflac $list_of_files[$i] --set-tag title='$title'");
-            $i++;
-        }
+    }
+    my $i = 0;
+    for my $title (@titles_file_lines) {
+        chomp ($title);
+        system("metaflac", $list_of_files[$i], "--set-tag", "title=$title");
+        $i++;
     }
 }
 
