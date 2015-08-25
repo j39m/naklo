@@ -364,7 +364,6 @@ if (defined $options->{"c"} ) {
         @splitline = split_eqchar($line);
         $leftside = token_sprout($splitline[0]);
         $rightside = $splitline[1];
-        $rightside =~ s/'/'"'"'/;
 
         @thesefiles = accumulate_files($leftside, \@list_of_files);
         $tagname = $leftside->[-1];
@@ -393,7 +392,6 @@ if (defined $options->{"t"}) {
         my $i = 0;
         for my $title (@titles_file_lines) {
             chomp ($title);
-            $title =~ s/'/'"'"'/g;
             system("metaflac $list_of_files[$i] --set-tag title='$title'");
             $i++;
         }
