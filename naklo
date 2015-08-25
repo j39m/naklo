@@ -57,7 +57,6 @@ sub gen_files {
     }
   
     return @listing_arr;
-  
 }
 
 
@@ -75,7 +74,6 @@ sub tag_num {
     }
   
     return;
-  
 }
 
 
@@ -90,9 +88,7 @@ sub decomment {
     if (scalar(@decomment) == 0) { # empty starter string splits to nothing
         return "";
     }
-  
     return $decomment[0];
-  
 }
 
 
@@ -318,7 +314,7 @@ if (defined $options->{"l"}) {
             print "Can't open file \"$tmp_iterator\"!\n";
             exit 1;
         }
-        push (@list_of_files, $tmp_iterator);
+        push(@list_of_files, $tmp_iterator);
     }
   
 } else { # call gen_files
@@ -345,9 +341,9 @@ if (defined $options->{"c"} ) {
     my $linecounter = 0;
     my $numfiles = scalar(@list_of_files);
   
-    my @splitline = (); # the line split on "="
-    my $leftside = (); # all control tokens
-    my $rightside = ""; # values
+    my @splitline = ();     # the line split on "="
+    my $leftside = ();      # all control tokens
+    my $rightside = "";     # values
 
     my $tagname = "";       # "... --set-tag $tagname= ..."
     my @thesefiles = ();    # files to operate upon
@@ -387,7 +383,6 @@ if (defined $options->{"t"}) {
     if ($num_titles != scalar(@list_of_files)) {
         print "Number of titles does not match number of files!\n"
             and exit 1;
-      
     } else {
         my $i = 0;
         for my $title (@titles_file_lines) {
@@ -395,9 +390,7 @@ if (defined $options->{"t"}) {
             system("metaflac $list_of_files[$i] --set-tag title='$title'");
             $i++;
         }
-    
     }
-  
 }
 
 print "Success!\n";
