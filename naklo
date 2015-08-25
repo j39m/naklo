@@ -69,10 +69,8 @@ sub tag_num {
     my $length = scalar(@_);
   
     for my $particular_file (@_) {
-        # CHANGE ME
-        #print "file is $particular_file, numbered $i/$length\n";
-        system("metaflac $particular_file --set-tag tracknumber=$i");
-        system("metaflac $particular_file --set-tag tracktotal=$length");
+        system("metaflac", "--set-tag", "tracknumber=$i",
+               "--set-tag", "tracktotal=$length", $particular_file);
         $i++;
     }
   
@@ -325,7 +323,7 @@ if (defined $options->{"l"}) {
             print "Can't open file \"$tmp_iterator\"!\n";
             exit 1;
         }
-        push (@list_of_files, "\"$tmp_iterator\"");
+        push (@list_of_files, $tmp_iterator);
     }
   
 } else { # call gen_files
