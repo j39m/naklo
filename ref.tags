@@ -1,0 +1,37 @@
+# REFERENCE TAG FILE
+
+# the two lines below are functionally equivalent
+all albumartist=Joe Hisaishi 
+albumartist = Joe Hisaishi
+
+# as are the three lines below
+artist=Yomiuri Nippon Symphony Orchestra
+artist =       Yomiuri Nippon Symphony Orchestra
+all artist =       Yomiuri Nippon Symphony Orchestra
+
+# the above demonstrate that Naklo disregards whitespace to an extent, and that you can get all files by specifying "all" or leaving out the target arguments (e.g. specific numbers). 
+
+# but remember that if you double up on functionally equivalent lines, the same tag gets applied multiple times as well. 
+
+# However, three examples of spacing that will error out: 
+
+1 -31 composer = Joe Hisaishi
+1- 31 composer = Joe Hisaishi # who writes ranges like this? 
+1 - 31 composer = Joe Hisaishi # nice but unnecessary
+
+# the correct format for ranges is as follows. 
+
+1-31 composer = Joe Hisaishi
+
+# single tracks can be specified as well. The two lines below are functionally equivalent; that is, you can call a lower bound and leave it at that, or you can set an identical upper bound for extra rigor
+
+32 artist = Yumi Matsutoya
+32-32 artist = Yumi Matsutoya
+
+# in the absence of a dash, tracks are treated separately
+
+1 2 3 artist = Berliner Philharmoniker
+
+# but you can mix separate tracks with ranges 
+
+1 4-7 10 conductor = Antoni Wit
