@@ -132,6 +132,7 @@ sub is_valid_tag {
             or ($_[0] eq "lyricist")
             or ($_[0] eq "title")
             or ($_[0] eq "album")
+            or ($_[0] eq "albumsort")
             or ($_[0] eq "location")
             or ($_[0] eq "date")
             or ($_[0] eq "genre")
