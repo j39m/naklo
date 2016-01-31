@@ -45,14 +45,14 @@ sub gen_files {
     }
     print "\n\n";
   
-    print STDERR " Do you wish to continue? [y/n]: ";
+    print STDERR "    Do you wish to continue? [y/n]: ";
     my $continue = <STDIN>;
-    print "\n\n";
+    print STDERR "\n\n";
     $continue = substr ($continue, 0, 1);
     if ($continue eq "k") {
-        print "Ok\n";
+        print STDERR "Ok\n";
     } elsif ($continue ne "y") {
-        print "Exiting.\n";
+        print STDERR "Exiting.\n";
         exit 0;
     }
   
@@ -84,7 +84,7 @@ sub tag_num {
 sub decomment {
 
     my ($line) = @_;
-    while ($line =~ s%\s+//.*$%%g) {;}
+    while ($line =~ s%//.*$%%g) {;}
     return $line;
 }
 
