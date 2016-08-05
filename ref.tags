@@ -14,4 +14,4 @@ artist = Joe Hisaishi
 # You can specify particular files to tag:
 1 3-6 13 artist = Gabriela Montero
 
-// You can also write your comments like this in the tag file.
+// You can also write your comments like this in the control file.
