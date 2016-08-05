@@ -104,20 +104,10 @@ class controlFile(pyaFile):
                 try:
                     nbrg.append(int(n))
                 except ValueError:
-
-                    try:
-                        lims = n.split("-")
-                        if len(lims) != 2:
-                            return None
-                        lwr = int(lims[0])
-                        upr = int(lims[1])
-                        if upr < lwr or lwr < 1:
-                            return None
-                        nbrg += list(range(lwr, upr+1))
-                    except ValueError:
-                        return None
-
-        except (IndexError, ValueError):
+                    ranger = self._numRangeSplit(n)
+                    if ranger:
+                        nbrg += ranger
+        except IndexError:
             return None
 
         nbrg.sort()
@@ -125,6 +115,19 @@ class controlFile(pyaFile):
             lhts = nbrg + [tag]
             return lhts
         return None
+
+    def _numRangeSplit(self, nr):
+        try:
+            lims = nr.split("-")
+            if len(lims) != 2:
+                return None
+            lwr = int(lims[0])
+            upr = int(lims[1])
+            if upr <= lwr or lwr < 1:
+                return None
+            return list(range(lwr, upr+1))
+        except ValueError:
+            return None
 
     def checkSanity(self, demonstrate=False):
         """
