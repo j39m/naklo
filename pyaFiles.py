@@ -24,8 +24,8 @@ class pyaFile(object):
         c = [ontent.strip() for ontent in c]
         return c
 
-    def checkSanity(self):
-        return False
+    def checkInsanity(self):
+        return True
 
 
 class titleFile(pyaFile):
@@ -152,18 +152,16 @@ class controlFile(pyaFile):
         except ValueError:
             return None
 
-    def checkSanity(self, demonstrate=False):
+    def checkInsanity(self):
         """
-        checkSanity: if "demonstrate" argument is not False, the return
-        type changes from True/False to empty/nonempty list!
+        checkInsanity: returns a list full of errors (empty if the file
+        is good).
         """
         errors = []
         for entry in zip(self.lnrs, self.lines):
             if entry[1] is None:
                 errors.append(entry)
-        if demonstrate:
-            return errors
-        return not errors
+        return errors
 
 
 class listingFile(pyaFile):
@@ -184,15 +182,13 @@ class listingFile(pyaFile):
     def enumerateTagees(self):
         return self.contents
 
-    def checkSanity(self, demonstrate=False):
+    def checkInsanity(self):
         """
-        checkSanity: if "demonstrate" argument is not False, the return
-        type changes from True/False to empty/nonempty list!
+        checkInsanity: returns a list full of errors (empty if the file
+        is good).
         This method is especially unsafe and is theoretically
         inconsistent in the face of a determined and swift-moving
         attacker. So is the rest of this program, really, so...
         """
         notFiles = [f for f in self.contents if os.path.isfile(f)]
-        if demonstrate:
-            return notFiles
-        return not notFiles
+        return notFiles
