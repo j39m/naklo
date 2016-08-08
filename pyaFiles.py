@@ -41,6 +41,8 @@ class controlFile(pyaFile):
 
     def __init__(self, fname, numFiles):
         super(controlFile, self).__init__(fname, numFiles)
+        self.hwmFile = 1    # high water mark file
+        self.lwmFile = 1    # low water mark file
         self.acceptableTags = set(("artist",
                                    "album",
                                    "albumartist",
@@ -56,7 +58,7 @@ class controlFile(pyaFile):
                                    "genre",
                                    "discnumber",
                                    "disctotal",
-                                   "discsubtitle,"))
+                                   "discsubtitle",))
         (self.lines, self.lnrs) = self._parse()
 
     def divulgeState(self):
@@ -98,9 +100,9 @@ class controlFile(pyaFile):
         """
         try:
             sp = [t.strip() for t in line.split("=", 1)]
-            lhts = self._lhandTokenize(sp[0])
-            return (lhts, sp[1])
-        except (IndexError, AttributeError): # bad split, None.append
+            (lhts, tag) = self._lhandTokenize(sp[0])
+            return (lhts, tag, sp[1])
+        except (IndexError, TypeError): # case None
             return None
 
     def _lhandTokenize(self, lhs):
@@ -129,9 +131,12 @@ class controlFile(pyaFile):
             nbrg = list(range(1, self.numFiles+1))
         else:
             nbrg.sort()
+        if nbrg[-1] > self.hwmFile:
+            self.hwmFile = nbrg[-1]
+        if nbrg[0] < self.lwmFile:
+            self.lwmFile = nbrg[0]
         if tag in self.acceptableTags:
-            lhts = nbrg + [tag]
-            return lhts
+            return (nbrg, tag)
         return None
 
     def _numRangeSplit(self, nr):
@@ -152,7 +157,11 @@ class controlFile(pyaFile):
         checkSanity: if "demonstrate" argument is not False, the return
         type changes from True/False to empty/nonempty list!
         """
-        return False
+        errors = []
+        for entry in zip(self.lnrs, self.lines):
+            if entry[1] is None:
+                errors.append(entry)
+        return not errors
 
 
 class listingFile(pyaFile):
