@@ -20,7 +20,8 @@ class pyaFile(object):
 
     def _slurp(self):
         c = self.ofile.readlines()
-        c = [ontent.strip() for ontent in c if ontent.strip()]
+        #c = [ontent.strip() for ontent in c if ontent.strip()]
+        c = [ontent.strip() for ontent in c]
         return c
 
     def checkSanity(self):
@@ -40,7 +41,6 @@ class controlFile(pyaFile):
 
     def __init__(self, fname, numFiles):
         super(controlFile, self).__init__(fname, numFiles)
-        (self.lines, self.lnrs) = self._parse()
         self.acceptableTags = set(("artist",
                                    "album",
                                    "albumartist",
@@ -57,17 +57,33 @@ class controlFile(pyaFile):
                                    "discnumber",
                                    "disctotal",
                                    "discsubtitle,"))
+        (self.lines, self.lnrs) = self._parse()
+
+    def divulgeState(self):
+        """
+        for debugging use: print out the token results of slurping
+        and parsing.
+        """
+        for pair in zip(self.lnrs, self.lines):
+            print("%d: %s" %(pair[0], str(pair[1])))
+        return 0
 
     def _parse(self):
         lines = []
         lnrs = []
         i = 1
         for l in self.contents:
-            if not self._isComment(l):
+            l = self._unComment(l)
+            if l:
                 lines.append(self._tokenize(l))
                 lnrs.append(i)
             i += 1
         return (lines, lnrs)
+
+    def _unComment(self, line):
+        line = line.split("//", 1)[0]
+        line = line.split("#", 1)[0]
+        return line.strip()
 
     def _isComment(self, line):
         try:
@@ -83,8 +99,7 @@ class controlFile(pyaFile):
         try:
             sp = [t.strip() for t in line.split("=", 1)]
             lhts = self._lhandTokenize(sp[0])
-            tokens = lhts.append(sp[1])
-            return tuple(tokens)
+            return (lhts, sp[1])
         except (IndexError, AttributeError): # bad split, None.append
             return None
 
@@ -95,7 +110,7 @@ class controlFile(pyaFile):
         Returns a list of extracted tokens otherwise.
         """
         try:
-            tkns = lhts.split()
+            tkns = lhs.split()
             tag = tkns[-1]
             nbrg_raw = tkns[:-1]
             nbrg = []
@@ -110,7 +125,10 @@ class controlFile(pyaFile):
         except IndexError:
             return None
 
-        nbrg.sort()
+        if not nbrg:
+            nbrg = list(range(1, self.numFiles+1))
+        else:
+            nbrg.sort()
         if tag in self.acceptableTags:
             lhts = nbrg + [tag]
             return lhts
