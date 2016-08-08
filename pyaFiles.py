@@ -161,7 +161,7 @@ class controlFile(pyaFile):
         for entry in zip(self.lnrs, self.lines):
             if entry[1] is None:
                 errors.append(entry)
-        if demonstrate and errors:
+        if demonstrate:
             return errors
         return not errors
 
@@ -193,6 +193,6 @@ class listingFile(pyaFile):
         attacker. So is the rest of this program, really, so...
         """
         notFiles = [f for f in self.contents if os.path.isfile(f)]
-        if demonstrate and notFiles:
+        if demonstrate:
             return notFiles
         return not notFiles
