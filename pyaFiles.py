@@ -190,5 +190,5 @@ class listingFile(pyaFile):
         inconsistent in the face of a determined and swift-moving
         attacker. So is the rest of this program, really, so...
         """
-        notFiles = [f for f in self.contents if os.path.isfile(f)]
+        notFiles = [f for f in self.contents if not os.path.isfile(f)]
         return notFiles
