@@ -14,7 +14,23 @@ MY_NAME = "pyaklon"
 class pyaklon(object):
 
     def __init__(self, *args):
-        self._prep_args(*args)
+        args = self._prep_args(*args)
+
+        try:
+            # listing file (which also tells us how many files to
+            # operate on
+            errlevel = str("listingFile %s" % args.listing)
+            self.listingFile = listingFile(args.listing, None)
+            self.numFiles = self.listFile.countTagees()
+            # titles file
+            errlevel = str("titleFile %s" % args.titles)
+            self.titleFile = titleFile(args.titles, self.numFiles)
+            # control file
+            errlevel = str("controlFile %s " % args.control)
+            self.controlFile = controlFile(args.control, self.numFiles)
+        except FileNotFoundError:
+            errstr = str("%s was not found!" % errlevel)
+            self.pyaErr(errstr, 1)
 
     def _prep_args(self, *args):
         ap = argparse.ArgumentParser()
@@ -36,14 +52,22 @@ class pyaklon(object):
                       "arguments. The listing file is typically a shell "
                       "redirect, like `<(ls ./*.flac)'.")
             self.pyaErr(errstr, 1)
-        return 0
+        return args
 
     def pyaErr(self, msg, bailcode=None):
         sys.stderr.write("%s\n" % msg)
         if bailcode is not None:
             sys.exit(bailcode)
 
+    def checkSanity(self):
+        fileInsanity = None
+        for fl in (self.listingFile, self.titleFile, self.controlFile):
+            fileInsanity = fileInsanity or fl.checkInsanity()
+        if fileInsanity:
+            self.pyaErr(str(fileInsanity), 1)
+
     def main(self):
+        self.checkSanity()
         return 0
 
 
