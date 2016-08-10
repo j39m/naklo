@@ -161,6 +161,11 @@ class controlFile(pyaFile):
         for entry in zip(self.lnrs, self.lines):
             if entry[1] is None:
                 errors.append(entry)
+                continue
+            lhts = entry[1][0]
+            elif lhts[0] < 1 or lhts[-1] > self.lwmFile:
+                errors.append(entry)
+                continue
         return errors
 
 
