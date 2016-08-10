@@ -33,6 +33,17 @@ class titleFile(pyaFile):
     A titleFile is a file full of titles.
     """
 
+    def checkInsanity(self):
+        clenerr = None
+        if not (len(self.contents) != self.numFiles):
+            clenerr = str("titleFile length != numfiles (%d != %d)"
+                          % (len(self.contents), self.numFiles))
+        errlist = [clenerr,]
+        return [e for e in errlist if e]
+
+    def enumerateTitles(self):
+        return self.contents
+
 
 class controlFile(pyaFile):
     """
@@ -168,6 +179,8 @@ class controlFile(pyaFile):
                 continue
         return errors
 
+    def enumerateDirectives(self):
+        return self.lines
 
 class listingFile(pyaFile):
     """
