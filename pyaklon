@@ -14,7 +14,9 @@ MY_NAME = "pyaklon"
 class pyaklon(object):
 
     def __init__(self, *args):
+        self._prep_args(*args)
 
+    def _prep_args(self, *args):
         ap = argparse.ArgumentParser()
         ap.add_argument("-l", "--listing",
                         help="name of listing file (typically "
@@ -30,9 +32,11 @@ class pyaklon(object):
                       and args.control)
         if not compulsory:
             ap.print_help()
-            self.pyaErr("\nHint: you probably want to provide all three "
-                        "arguments. The listing file is typically a "
-                        "shell redirect, like `<(ls ./*.flac)'.", 1)
+            errstr = ("\nHint: you probably want to provide all three "
+                      "arguments. The listing file is typically a shell "
+                      "redirect, like `<(ls ./*.flac)'.")
+            self.pyaErr(errstr, 1)
+        return 0
 
     def pyaErr(self, msg, bailcode=None):
         sys.stderr.write("%s\n" % msg)
