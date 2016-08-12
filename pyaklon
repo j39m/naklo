@@ -21,7 +21,7 @@ class pyaklon(object):
             # operate on
             errlevel = str("listingFile %s" % args.listing)
             self.listingFile = listingFile(args.listing, None)
-            self.numFiles = self.listFile.countTagees()
+            self.numFiles = self.listingFile.countTagees()
             # titles file
             errlevel = str("titleFile %s" % args.titles)
             self.titleFile = titleFile(args.titles, self.numFiles)
@@ -60,11 +60,15 @@ class pyaklon(object):
             sys.exit(bailcode)
 
     def checkSanity(self):
-        fileInsanity = None
-        for fl in (self.listingFile, self.titleFile, self.controlFile):
-            fileInsanity = fileInsanity or fl.checkInsanity()
-        if fileInsanity:
-            self.pyaErr(str(fileInsanity), 1)
+        insanity = None
+        for f in (self.listingFile,
+                  self.titleFile,
+                  self.controlFile):
+            if f.checkSanity():
+                insanity = "\n".join(f.showInsanity())
+                self.pyaErr(insanity)
+        if insanity:
+            self.pyaErr("One or more errors detected. Aborting.", 1)
 
     def main(self):
         self.checkSanity()

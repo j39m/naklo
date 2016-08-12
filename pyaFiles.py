@@ -17,6 +17,7 @@ class pyaFile(object):
         self.numFiles = numFiles
         self.ofile = open(fname, "r")
         self.contents = self._slurp()
+        self.errs = []
 
     def _slurp(self):
         c = self.ofile.readlines()
@@ -24,22 +25,30 @@ class pyaFile(object):
         c = [ontent.strip() for ontent in c]
         return c
 
-    def checkInsanity(self):
-        return True
+    def checkSanity(self):
+        return False
 
+    def showInsanity(self):
+        return []
 
 class titleFile(pyaFile):
     """
     A titleFile is a file full of titles.
     """
 
-    def checkInsanity(self):
+    def checkSanity(self):
         clenerr = None
-        if not (len(self.contents) != self.numFiles):
+        if len(self.contents) != self.numFiles:
             clenerr = str("titleFile length != numfiles (%d != %d)"
                           % (len(self.contents), self.numFiles))
         errlist = [clenerr,]
-        return [e for e in errlist if e]
+        self.errs = [e for e in errlist if e]
+        if self.errs:
+            return 1
+        return 0
+
+    def showInsanity(self):
+        return self.errs
 
     def enumerateTitles(self):
         return self.contents
@@ -163,21 +172,29 @@ class controlFile(pyaFile):
         except ValueError:
             return None
 
-    def checkInsanity(self):
-        """
-        checkInsanity: returns a list full of errors (empty if the file
-        is good).
-        """
+    def checkSanity(self):
         errors = []
         for entry in zip(self.lnrs, self.lines):
             if entry[1] is None:
                 errors.append(entry)
                 continue
             lhts = entry[1][0]
-            if (lhts[0] < 1) or (lhts[-1] > self.lwmFile):
+            if (lhts[0] < 1) or (lhts[-1] > self.numFiles):
                 errors.append(entry)
                 continue
-        return errors
+        self.errs = errors
+        if self.errs:
+            return 1
+        return 0
+
+    def showInsanity(self):
+        errlist = []
+        for err in self.errs:
+            lnr = err[0]
+            line = self.contents[lnr-1]
+            fmtd = str("%02d: %s" % (lnr, line))
+            errlist.append(fmtd)
+        return errlist
 
     def enumerateDirectives(self):
         return self.lines
@@ -200,13 +217,20 @@ class listingFile(pyaFile):
     def enumerateTagees(self):
         return self.contents
 
-    def checkInsanity(self):
+    def checkSanity(self):
         """
-        checkInsanity: returns a list full of errors (empty if the file
-        is good).
+        checkSanity: basic sanity check on the files to operate upon.
         This method is especially unsafe and is theoretically
         inconsistent in the face of a determined and swift-moving
         attacker. So is the rest of this program, really, so...
         """
         notFiles = [f for f in self.contents if not os.path.isfile(f)]
-        return notFiles
+        self.errs = notFiles
+        if notFiles:
+            return 1
+        return 0
+
+    def showInsanity(self):
+        if self.errs:
+            errlist = [f + " is not a file" for f in self.errs]
+            return errlist
