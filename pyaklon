@@ -60,6 +60,9 @@ class pyaklon(object):
             sys.exit(bailcode)
 
     def checkSanity(self):
+        """
+        Display errors in inputs; bail if these are nonzero.
+        """
         insanity = None
         for f in (self.listingFile,
                   self.titleFile,
@@ -71,7 +74,28 @@ class pyaklon(object):
             self.pyaErr("One or more errors detected. Aborting.", 1)
 
     def main(self):
+        """
+        The main flow of execution. Call this, it's what you want.
+        """
+
         self.checkSanity()
+
+        # list files as dict, each with of list of tag=value to apply.
+        # this way, we can bundle all the tags into one metaflac call,
+        # something which we didn't do in the old Perl naklo.
+        files_d = {}
+        file_index = self.listingFile.enumerateTagees()
+        for f in file_index:
+            files_d[f] = []
+
+        # gather titles
+        for p in zip(file_index, self.titleFile.enumerateTitles()):
+            files_d[p[0]] = "title=%s" % p[1]
+
+        # gather other directives
+        d = self.controlFile.enumerateDirectives()
+        for directive in d:
+            (files, tag, value) = directive
         return 0
 
 
