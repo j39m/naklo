@@ -197,6 +197,13 @@ class controlFile(pyaFile):
         return errlist
 
     def enumerateDirectives(self):
+        """
+        returns an ordered tuple of
+        (lhts, tag, value)
+        where lhts is a misnomer for the numbers only (not including
+        the tag, which is its own separate value) for which ``tag''
+        should be applied with ``value.''
+        """
         return self.lines
 
 class listingFile(pyaFile):
