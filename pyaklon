@@ -7,6 +7,7 @@
 from pyaFiles import controlFile, titleFile, listingFile
 import argparse
 import sys
+import subprocess
 
 MY_NAME = "pyaklon"
 
@@ -90,12 +91,22 @@ class pyaklon(object):
 
         # gather titles
         for p in zip(file_index, self.titleFile.enumerateTitles()):
-            files_d[p[0]] = "title=%s" % p[1]
+            files_d[p[0]].append("title=%s" % p[1])
 
         # gather other directives
         d = self.controlFile.enumerateDirectives()
         for directive in d:
-            (files, tag, value) = directive
+            (applicants, tag, value) = directive
+            applicants = [file_index[f-1] for f in applicants]
+            for a in applicants:
+                files_d[a].append("%s=%s" % (tag, value))
+
+        # tagger up!
+        for (f, v) in files_d.items():
+            directives = [str("--set-tag %s" % t) for t in v]
+            cmd = ("metaflac", *directives, f)
+            print(cmd)
+
         return 0
 
 
