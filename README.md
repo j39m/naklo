@@ -1,6 +1,26 @@
 # naklo
 
-... is a Perl script that calls metaflac to write FLAC metadata in batches. It operates by following a user-provided control file instructing it on how to tag things. A reference tag file that contains many examples of how to tag should be included with this script. Two references files in particular give examples of how to format metadata directives ("control" and "titles," which are respectively to be used with the "-c" and "-t" options). 
+... is a Python 3 script that calls metaflac to write FLAC metadata
+in batches. Little has changed since the days of Perl naklo,
+except mainly the name, "pyaklon," which distinguishes it from the
+today-deprecated (???) name of "naklo."
+("pynaklo" was used in an earlier burner script, so I couldn't recycle
+that.)
+
+One significant change is that it is no longer possible to use the
+directive "all" before tag/value indicators to apply to all files. By
+default, omitting an explicit numeric specification will apply a
+tag-and-value pair globally. This was unnecessary functionality that
+I didn't think through; therefore it is removed to marginally simplify
+parsing in pyaklon.
+
+I must say I'm much happier with this Python 3 port. It's easier to read,
+easier to maintain, and does things with a tad more formal rigor than
+the Perl version.
+
+The old README picks up below.
+
+... was a Perl script that calls metaflac to write FLAC metadata in batches. It operates by following a user-provided control file instructing it on how to tag things. A reference tag file that contains many examples of how to tag should be included with this script. Two references files in particular give examples of how to format metadata directives ("control" and "titles," which are respectively to be used with the "-c" and "-t" options). 
 
 Be warned: naklo is neither patient nor kind (nor is it boastful, envious, or proud). It will ravenously go through all FLAC files (if not specified by user, assumed to be *all* FLAC files in the working directory --- it will ask for confirmation about that case) and tag everything. There are no dry runs, no previews. Use caution, and remember that "metaflac --remove-all-tags" is your friend. 
 
