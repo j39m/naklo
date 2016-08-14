@@ -94,6 +94,7 @@ class pyaklon(object):
             files_d[f] = []
             files_d[f].append("tracknumber=%d" % tracknum)
             files_d[f].append("tracktotal=%d" % tracktot)
+            tracknum += 1
 
         # gather titles
         for p in zip(file_index, self.titleFile.enumerateTitles()):
