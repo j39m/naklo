@@ -35,18 +35,21 @@ class pyaklon(object):
 
     def _prep_args(self, *args):
         ap = argparse.ArgumentParser()
-        ap.add_argument("-l", "--listing",
-                        help="name of listing file (typically "
-                        "a shell redirect)",)
-        ap.add_argument("-t", "--titles",
-                        help="name of titles file",)
-        ap.add_argument("-c", "--control",
-                        help="name of control file",)
+        ap.add_argument(
+            "-l", "--listing",
+            help="name of listing file (typically a shell redirect)",
+        )
+        ap.add_argument(
+            "-t", "--titles",
+            help="name of titles file",
+        )
+        ap.add_argument(
+            "-c", "--control",
+            help="name of control file",
+        )
         args = ap.parse_args()
 
-        compulsory = (args.listing
-                      and args.titles
-                      and args.control)
+        compulsory = (args.listing and args.titles and args.control)
         if not compulsory:
             ap.print_help()
             errstr = ("\nHint: you probably want to provide all three "
