@@ -3,8 +3,18 @@ This file implements the abstraction of naklo control blocks.
 """
 
 SPAN = "naklo-span"
+SPAN_WC = "all"
 
 import yaml
+
+
+def slurp_cf(fname):
+    """
+    Given a control file, parse the file as a series of naklo control blocks
+    and return the resulting array of Control objects.
+    """
+    with open(fname, "r") as cfp:
+        return [Control(yam) for yam in yaml.load(cfp)]
 
 
 def number_tracks(tr_arr):
@@ -50,11 +60,18 @@ class Control(object):
     """
     def __init__(self, kvd):
         self.kvstore = dict(kvd)
-        span_spec = self.kvstore.pop(SPAN)
-        self.span = process_span(span_spec)
+        span_spec = self.kvstore.pop(SPAN, SPAN_WC)
+        self.span = (
+            process_span(span_spec) if span_spec != SPAN_WC
+            else SPAN_WC
+        )
 
     def __getitem__(self, key):
         return self.kvstore[key]
+
+    def __str__(self):
+        basis = "Control (span {}): ".format(self.span)
+        return basis + str(self.kvstore)
 
     def keys(self):
         return self.kvstore.keys()
