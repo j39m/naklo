@@ -8,7 +8,7 @@ SPAN_WC = "all"
 import yaml
 
 
-def slurp_cf(fname):
+def controls_to_array(fname):
     """
     Given a control file, parse the file as a series of naklo control blocks
     and return the resulting array of Control objects.
