@@ -1,1 +1,2 @@
-from libnaklo.control import Control
+import libnaklo.control
+import libnaklo.song
