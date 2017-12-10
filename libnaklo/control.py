@@ -78,3 +78,10 @@ class Control(object):
 
     def items(self):
         return self.kvstore.items()
+
+    def apply_to_songs(self, songs_arr):
+        """
+        Given a array of all the songs (in consecutive order), apply all
+        my tags to the relevant songs.
+        """
+        raise NotImplementedError("XXX kalee Control.apply_to_songs")
