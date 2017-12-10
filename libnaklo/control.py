@@ -79,9 +79,21 @@ class Control(object):
     def items(self):
         return self.kvstore.items()
 
+    def apply_to_song(self, song):
+        """
+        Given a single song object, apply all my tags.
+        """
+        raise NotImplementedError("XXX kalee Control.apply_to_song")
+
     def apply_to_songs(self, songs_arr):
         """
         Given a array of all the songs (in consecutive order), apply all
         my tags to the relevant songs.
         """
-        raise NotImplementedError("XXX kalee Control.apply_to_songs")
+        span = (
+            self.span if self.span != SPAN_WC
+            else range(1, len(songs_arr) + 1)
+        )
+        selection = [songs_arr[i] for i in span]
+        for song in selection:
+            self.apply_to_song(song)
