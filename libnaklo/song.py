@@ -47,7 +47,7 @@ class Song(object):
             self.tags[key] = [value,]
 
     def __delitem__(self, key):
-        del(self.tags[key])
+        del self.tags[key]
 
     def build_metaflac_stdin(self):
         """
