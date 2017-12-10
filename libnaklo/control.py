@@ -2,10 +2,10 @@
 This file implements the abstraction of naklo control blocks.
 """
 
+import yaml
+
 SPAN = "naklo-span"
 SPAN_WC = "all"
-
-import yaml
 
 
 def controls_to_array(fname):
@@ -34,6 +34,7 @@ def process_span(span_spec):
     described by said span spec.
     """
     def range_or_int(single_span):
+        """Return a list exploding the span token argument."""
         try:
             return [int(single_span),]
         except ValueError:
@@ -74,6 +75,7 @@ class Control(object):
         return basis + str(self.kvstore)
 
     def keys(self):
+        """Pass through to my kvstore.keys."""
         return self.kvstore.keys()
 
     def apply_to_song(self, song):
