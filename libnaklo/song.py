@@ -59,6 +59,10 @@ class Song(object):
         return retv
 
     def do_tag(self, dry_run=True):
+        """
+        Perform the metaflac call that will tag this song.
+        If dry_run is True, print the same (and do not actually do it).
+        """
         if dry_run:
             print(self.path)
             metaflac_in = self.build_metaflac_stdin()
