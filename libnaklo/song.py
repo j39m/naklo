@@ -49,6 +49,15 @@ class Song(object):
     def __delitem__(self, key):
         del(self.tags[key])
 
+    def build_metaflac_stdin(self):
+        """
+        Return a list of the form KEY=VAL for each tag-value pair in me.
+        """
+        retv = list()
+        for (tag, value_list) in self.tags.items():
+            retv.extend(["{}={}".format(tag, val) for val in value_list])
+        return retv
+
     def do_tag(self, dry_run=True):
         if dry_run:
             print(self.path)
