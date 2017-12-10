@@ -111,6 +111,6 @@ class Control(object):
             self.span if self.span != SPAN_WC
             else range(1, len(songs_arr) + 1)
         )
-        selection = [songs_arr[i] for i in span]
+        selection = [songs_arr[i - 1] for i in span]
         for song in selection:
             self.apply_to_song(song)
