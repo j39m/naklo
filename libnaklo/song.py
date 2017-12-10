@@ -49,5 +49,11 @@ class Song(object):
     def __delitem__(self, key):
         del(self.tags[key])
 
-    def do_tag(self, dry_run=False):
-        raise NotImplementedError("XXX j39m call metaflac!")
+    def do_tag(self, dry_run=True):
+        if dry_run:
+            print(self.path)
+            metaflac_in = self.build_metaflac_stdin()
+            metaflac_in.insert(0, "")
+            print("\n  ".join(metaflac_in))
+        else:
+            raise NotImplementedError("XXX j39m call metaflac!")
