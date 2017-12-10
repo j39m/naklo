@@ -5,6 +5,7 @@ naklo is a batch FLAC tagger.
 
 import sys
 import argparse
+import libnaklo
 
 
 def parse_args():
@@ -28,7 +29,31 @@ def parse_args():
 
 def main():
     args = parse_args()
-    print(args)
+
+    controls = list()
+    titles = list()
+    songs = libnaklo.songs_to_array(*args.songs)
+
+    # Control blocks are ``universal'' in scope.
+    if args.control_file:
+        for cfn in args.control_file:
+            controls.extend(libnaklo.controls_to_array(cfn))
+    # Title files each represent one sweep by themselves. Each file is
+    # a fresh pass at the whole songs array; they do not build on each
+    # other.
+    if args.title_file:
+        for tfn in args.title:
+            titles.append(libnaklo.titles_to_array(tfn))
+
+    for ctl in controls:
+        ctl.apply_to_songs(songs)
+    for t_arr in titles:
+        libnaklo.apply_titles_to_songs(t_arr, songs)
+    libnaklo.number_tracks(songs)
+
+    for song in songs:
+        song.do_tag()
+
     return 0
 
 if __name__ == "__main__":
