@@ -76,14 +76,23 @@ class Control(object):
     def keys(self):
         return self.kvstore.keys()
 
-    def items(self):
-        return self.kvstore.items()
-
     def apply_to_song(self, song):
         """
         Given a single song object, apply all my tags.
         """
-        raise NotImplementedError("XXX kalee Control.apply_to_song")
+        def value_to_list(raw_val):
+            """Multiply-valued tags are rep'd as newl-separated strings."""
+            value_list = list()
+            for single_ in raw_val.split("\n"):
+                single = single_.strip()
+                if single:
+                    value_list.append(single)
+            return value_list
+
+        for (tag, value) in self.kvstore.items():
+            value_list = value_to_list(value)
+            for val_single in value_list:
+                song[tag] = val_single
 
     def apply_to_songs(self, songs_arr):
         """
