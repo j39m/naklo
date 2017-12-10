@@ -4,6 +4,12 @@ This file implements the abstraction of naklo control blocks.
 
 import yaml
 
+__all__ = [
+    "controls_to_array",
+    "number_tracks",
+    "Control",
+]
+
 SPAN = "naklo-span"
 SPAN_WC = "all"
 

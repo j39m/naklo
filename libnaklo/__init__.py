@@ -1,2 +1,2 @@
-import libnaklo.control
-import libnaklo.song
+from libnaklo.control import *
+from libnaklo.song import *

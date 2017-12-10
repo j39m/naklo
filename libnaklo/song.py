@@ -2,6 +2,11 @@
 This file implements the abstraction of a single song to be tagged.
 """
 
+__all__ = [
+    "songs_to_array",
+    "Song",
+]
+
 VALID_TAGS = set((
     "artist",
     "album",
