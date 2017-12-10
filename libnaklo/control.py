@@ -29,9 +29,9 @@ def number_tracks(tr_arr):
     and tracktotal tags to each track.
     """
     total = len(tr_arr)
-    for (track, index) in enumerate(tr_arr, 1):
-        track["tracktotal"] = total
-        track["tracknumber"] = index
+    for (index, track) in enumerate(tr_arr, 1):
+        track["tracktotal"] = str(total)
+        track["tracknumber"] = str(index)
 
 
 def process_span(span_spec):
@@ -91,7 +91,7 @@ class Control(object):
         def value_to_list(raw_val):
             """Multiply-valued tags are rep'd as newl-separated strings."""
             value_list = list()
-            for single_ in raw_val.split("\n"):
+            for single_ in str(raw_val).split("\n"):
                 single = single_.strip()
                 if single:
                     value_list.append(single)

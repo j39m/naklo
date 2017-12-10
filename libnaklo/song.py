@@ -21,6 +21,8 @@ VALID_TAGS = set((
     "location",
     "date",
     "genre",
+    "tracknumber",
+    "tracktotal",
     "discnumber",
     "disctotal",
     "discsubtitle",
