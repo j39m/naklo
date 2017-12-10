@@ -11,9 +11,17 @@ def parse_args():
     parser = argparse.ArgumentParser(
         description="provide templates with which to tag FLAC files."
     )
-    parser.add_argument("-c", "--control-file", action="append",)
-    parser.add_argument("-t", "--title-file", action="append",)
-    parser.add_argument("flacs", metavar="<target FLACs to tag>")
+    parser.add_argument(
+        "-c", "--control-file", action="append",
+        help="File of YAML-formatted control blocks",
+    )
+    parser.add_argument(
+        "-t", "--title-file", action="append",
+        help="File full of newline-separated titles",
+    )
+    parser.add_argument(
+        "songs", nargs=argparse.REMAINDER, metavar="<target FLACs to tag>"
+    )
 
     return parser.parse_args()
 
