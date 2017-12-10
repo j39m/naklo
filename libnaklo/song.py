@@ -2,6 +2,8 @@
 This file implements the abstraction of a single song to be tagged.
 """
 
+import sys
+
 __all__ = [
     "songs_to_array",
     "Song",
@@ -71,7 +73,7 @@ class Song(object):
         If dry_run is True, print the same (and do not actually do it).
         """
         if dry_run:
-            print(self.path)
+            sys.stdout.write(self.path)
             metaflac_in = self.build_metaflac_stdin()
             metaflac_in.insert(0, "")
             print("\n  ".join(metaflac_in))
