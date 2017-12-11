@@ -83,12 +83,13 @@ class Song(object):
             print("\n  ".join(metaflac_in))
         else:
             meta = subprocess.Popen(
-                args=("metaflac", "--import-tags-from=-"),
+                args=("metaflac", "--import-tags-from=-", self.path),
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
             )
             stdin_str = "\n".join(self.build_metaflac_stdin())
-            (stdout, stderr) = meta.communicate(input=stdin_str)
+            byt = stdin_str.encode(encoding="UTF-8")
+            (stdout, stderr) = meta.communicate(input=byt)
             self.last_stdout = stdout
             self.last_stderr = stderr
             return meta.wait()
