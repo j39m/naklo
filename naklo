@@ -52,7 +52,10 @@ def main():
     libnaklo.number_tracks(songs)
 
     for song in songs:
-        song.do_tag()
+        if song.do_tag():
+            print(song.path)
+            print(song.last_stodut)
+            print(song.last_stderr)
 
     return 0
 

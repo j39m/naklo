@@ -3,6 +3,7 @@ This file implements the abstraction of a single song to be tagged.
 """
 
 import sys
+import subprocess
 
 __all__ = [
     "songs_to_array",
@@ -47,6 +48,9 @@ class Song(object):
         self.path = path
         self.tags = dict()
 
+        self.last_stdout = None
+        self.last_stderr = None
+
     def __setitem__(self, key, value):
         if key not in VALID_TAGS:
             raise ValueError("invalid key ``{}.''".format(key))
@@ -67,7 +71,7 @@ class Song(object):
             retv.extend(["{}={}".format(tag, val) for val in value_list])
         return retv
 
-    def do_tag(self, dry_run=True):
+    def do_tag(self, dry_run=False):
         """
         Perform the metaflac call that will tag this song.
         If dry_run is True, print the same (and do not actually do it).
@@ -78,4 +82,13 @@ class Song(object):
             metaflac_in.insert(0, "")
             print("\n  ".join(metaflac_in))
         else:
-            raise NotImplementedError("XXX j39m call metaflac!")
+            meta = subprocess.Popen(
+                args=("metaflac", "--import-tags-from=-"),
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+            )
+            stdin_str = "\n".join(self.build_metaflac_stdin())
+            (stdout, stderr) = meta.communicate(input=stdin_str)
+            self.last_stdout = stdout
+            self.last_stderr = stderr
+            return meta.wait()
