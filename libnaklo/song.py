@@ -63,7 +63,7 @@ class Song(object):
         Return a list of the form KEY=VAL for each tag-value pair in me.
         """
         retv = list()
-        for (tag, value_list) in self.tags.items():
+        for (tag, value_list) in sorted(self.tags.items()):
             retv.extend(["{}={}".format(tag, val) for val in value_list])
         return retv
 
