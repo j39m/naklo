@@ -42,7 +42,7 @@ def main():
     # a fresh pass at the whole songs array; they do not build on each
     # other.
     if args.title_file:
-        for tfn in args.title:
+        for tfn in args.title_file:
             titles.append(libnaklo.titles_to_array(tfn))
 
     for ctl in controls:
