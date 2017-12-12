@@ -1,0 +1,37 @@
+-
+    discnumber: 1
+    location: Auditorio Stelio Molo, Lugano
+-
+    naklo-span: 1-4
+    composer: Robert Schumann
+-
+    naklo-span: 5 6 9-12
+    composer: Felix Mendelssohn
+-
+    naklo-span: 7 8
+    composer: Frédéric Chopin
+-
+    naklo-span: 1-4
+    artist: |
+        Martha Argerich
+        Renaud Capuçon
+        Gautier Capuçon
+-
+    naklo-span: 5 6
+    artist: |
+        Martha Argerich
+        Cristina Marton
+-
+    naklo-span: 7 8
+    artist: |
+        Gautier Capuçon
+        Martha Argerich
+-
+    naklo-span: 9-12
+    artist: |
+        Khatia Buniatishvili
+        Dora Schwarzberg
+        Nora Romanoff-Schwarzberg
+        Lida Chen
+        Jorge Bosso
+        Enrico Fagone
