@@ -69,6 +69,7 @@ class Song(object):
         retv = list()
         for (tag, value_list) in sorted(self.tags.items()):
             retv.extend(["{}={}".format(tag, val) for val in value_list])
+        retv.append("")
         return retv
 
     def do_tag(self, dry_run=False):
