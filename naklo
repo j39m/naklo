@@ -9,6 +9,7 @@ import libnaklo
 
 
 def parse_args():
+    """Construct and return an argument parser."""
     parser = argparse.ArgumentParser(
         description="provide templates with which to tag FLAC files."
     )
@@ -21,18 +22,31 @@ def parse_args():
         help="File full of newline-separated titles",
     )
     parser.add_argument(
-        "songs", nargs=argparse.REMAINDER, metavar="<target FLACs to tag>"
+        "-m", "--use-metaflac", action="store_true",
+        help="Force naklo to tag with metaflac",
+    )
+    parser.add_argument(
+        "songs", nargs=argparse.REMAINDER, metavar="<target files to tag>"
     )
 
     return parser.parse_args()
 
 
 def main():
+    """Read, process, and write tags."""
     args = parse_args()
 
     controls = list()
     titles = list()
-    songs = libnaklo.songs_to_array(*args.songs)
+
+    # For now, we force metaflac usage when tagging songs.
+    # TODO(j39m): change this!
+    args.use_metaflac = True
+
+    songs = libnaklo.songs_to_array(
+        *args.songs,
+        use_metaflac=args.use_metaflac
+    )
 
     # Control blocks are ``universal'' in scope.
     if args.control_file:

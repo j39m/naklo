@@ -32,24 +32,25 @@ VALID_TAGS = set((
 ))
 
 
-def songs_to_array(*fnames):
+def songs_to_array(*fnames, use_metaflac=True):
     """
     Given one or more paths to songs, return an array consisting of each
     path initialized as a song object.
     """
-    return [Song(fname) for fname in fnames]
+    if use_metaflac:
+        return [MetaflacFlacSong(fname) for fname in fnames]
+    raise NotImplementedError("TODO(j39m): use mutagen.")
 
 
-class Song(object):
+class Song():
     """
-    Abstraction of a song object containing tags.
+    A Song object applies to one file and can hold its tags.
+
+    Do not use this object by itself. Subclass it appropriately.
     """
     def __init__(self, path):
         self.path = path
         self.tags = dict()
-
-        self.last_stdout = None
-        self.last_stderr = None
 
     def __setitem__(self, key, value):
         if key not in VALID_TAGS:
@@ -61,6 +62,21 @@ class Song(object):
 
     def __delitem__(self, key):
         del self.tags[key]
+
+    def do_tag(self, dry_run=False):
+        """
+        Act now and tag the song to which I correspond.
+        """
+        raise NotImplementedError("Song.do_tag()")
+
+class MetaflacFlacSong(Song):
+    """
+    A MetaflacFlacSong is a Song that calls metaflac to tag itself.
+    """
+    def __init__(self, path):
+        super().__init__(path)
+        self.last_stdout = None
+        self.last_stderr = None
 
     def build_metaflac_stdin(self):
         """
@@ -82,15 +98,16 @@ class Song(object):
             metaflac_in = self.build_metaflac_stdin()
             metaflac_in.insert(0, "")
             print("\n  ".join(metaflac_in))
-        else:
-            meta = subprocess.Popen(
-                args=("metaflac", "--import-tags-from=-", self.path),
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-            )
-            stdin_str = "\n".join(self.build_metaflac_stdin())
-            byt = stdin_str.encode(encoding="UTF-8")
-            (stdout, stderr) = meta.communicate(input=byt)
-            self.last_stdout = stdout
-            self.last_stderr = stderr
-            return meta.wait()
+            return 0
+
+        meta = subprocess.Popen(
+            args=("metaflac", "--import-tags-from=-", self.path),
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+        )
+        stdin_str = "\n".join(self.build_metaflac_stdin())
+        byt = stdin_str.encode(encoding="UTF-8")
+        (stdout, stderr) = meta.communicate(input=byt)
+        self.last_stdout = stdout
+        self.last_stderr = stderr
+        return meta.wait()
