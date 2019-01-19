@@ -66,10 +66,8 @@ def main():
     libnaklo.number_tracks(songs)
 
     for song in songs:
-        if song.do_tag():
-            print(song.path)
-            print(song.last_stodut)
-            print(song.last_stderr)
+        # TODO(j39m): catch IOError upon failure.
+        song.do_tag()
 
     return 0
 

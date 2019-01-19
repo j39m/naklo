@@ -66,6 +66,9 @@ class Song():
     def do_tag(self, dry_run=False):
         """
         Act now and tag the song to which I correspond.
+
+        This method should return nothing on success and raise an IOError
+        on failure.
         """
         raise NotImplementedError("Song.do_tag()")
 
@@ -73,11 +76,6 @@ class MetaflacFlacSong(Song):
     """
     A MetaflacFlacSong is a Song that calls metaflac to tag itself.
     """
-    def __init__(self, path):
-        super().__init__(path)
-        self.last_stdout = None
-        self.last_stderr = None
-
     def build_metaflac_stdin(self):
         """
         Return a list of the form KEY=VAL for each tag-value pair in me.
@@ -98,7 +96,7 @@ class MetaflacFlacSong(Song):
             metaflac_in = self.build_metaflac_stdin()
             metaflac_in.insert(0, "")
             print("\n  ".join(metaflac_in))
-            return 0
+            return
 
         meta = subprocess.Popen(
             args=("metaflac", "--import-tags-from=-", self.path),
@@ -107,7 +105,7 @@ class MetaflacFlacSong(Song):
         )
         stdin_str = "\n".join(self.build_metaflac_stdin())
         byt = stdin_str.encode(encoding="UTF-8")
-        (stdout, stderr) = meta.communicate(input=byt)
-        self.last_stdout = stdout
-        self.last_stderr = stderr
-        return meta.wait()
+        (_, stderr) = meta.communicate(input=byt)
+        if meta.wait():
+            efmt = "tag failed on ``{}:'' {}"
+            raise IOError(efmt.format(self.path, stderr))
