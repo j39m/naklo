@@ -22,12 +22,12 @@ def make_parser():
         help="File full of newline-separated titles",
     )
     parser.add_argument(
-        "-m", "--use-metaflac", action="store_true",
-        help="Force naklo to tag with metaflac",
-    )
-    parser.add_argument(
         "-p", "--preserve-existing", action="store_true",
         help="Preserve existing tags within input files",
+    )
+    parser.add_argument(
+        "-m", "--use-metaflac", action="store_true",
+        help="Force naklo to tag with metaflac",
     )
     parser.add_argument(
         "songs", nargs=argparse.REMAINDER, metavar="<target files to tag>"
