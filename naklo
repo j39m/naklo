@@ -26,6 +26,10 @@ def make_parser():
         help="Force naklo to tag with metaflac",
     )
     parser.add_argument(
+        "-p", "--preserve-existing", action="store_true",
+        help="Preserve existing tags within input files",
+    )
+    parser.add_argument(
         "songs", nargs=argparse.REMAINDER, metavar="<target files to tag>"
     )
 
@@ -45,6 +49,10 @@ def main():
         *args.songs,
         use_metaflac=args.use_metaflac
     )
+
+    if not args.preserve_existing:
+        for song in songs:
+            song.clear()
 
     # Control blocks are ``universal'' in scope.
     # Create an array of control objects. Each control object is

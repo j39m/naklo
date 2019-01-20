@@ -114,6 +114,10 @@ class MutagenBaseSong(Song):
         super().__init__(path)
         self.mutagen_obj = self.mutagen_inst(path)
 
+    def clear(self):
+        """Clear all my current tags."""
+        self.mutagen_obj.clear()
+
     def do_tag(self, dry_run=False):
         """Perform Mutagen-based tagging."""
         if dry_run:
@@ -135,6 +139,20 @@ class MutagenMp3Song(MutagenBaseSong):
     mutagen to tag itself.
     """
     mutagen_inst = mutagen.easyid3.EasyID3
+
+    def do_tag(self, dry_run=False):
+        """
+        Perform Mutagen-based tagging.
+
+        TODO(j39m): EasyID3 isn't all there?
+        TODO(j39m): ``albumartist'' appears to map to ``performer'' in
+        the output and ``performer'' to nothing at all.
+        """
+        try:
+            self.tags.pop("tracktotal")
+        except KeyError:
+            pass
+        super().do_tag(dry_run)
 
 EXT_MUTAGEN_MAP = {
     ".flac": MutagenFlacSong,
