@@ -63,7 +63,7 @@ class Song():
         """
         Act now and tag the song to which I correspond.
 
-        This method should return nothing on success and raise an IOError
+        This method returns nothing on success and raises an IOError
         on failure.
         """
         raise NotImplementedError("Song.do_tag()")
@@ -106,29 +106,35 @@ class MetaflacFlacSong(Song):
             efmt = "tag failed on ``{}:'' {}"
             raise IOError(efmt.format(self.path, stderr))
 
-class MutagenFlacSong(Song):
+class MutagenBaseSong(Song):
+    """A Mutagen-based song."""
+    mutagen_inst = mutagen.File
+
+    def __init__(self, path):
+        super().__init__(path)
+        self.mutagen_obj = self.mutagen_inst(path)
+
+    def do_tag(self, dry_run=False):
+        """Perform Mutagen-based tagging."""
+        if dry_run:
+            raise NotImplementedError("dry_run=True in do_tag()!")
+        for (tag, val_list) in self.tags.items():
+            self.mutagen_obj[tag] = val_list
+        self.mutagen_obj.save()
+
+class MutagenFlacSong(MutagenBaseSong):
     """
     A MutagenFlacSong is a Song that identifies as FLAC and which uses
     mutagen to tag itself.
     """
-    def __init__(self, path):
-        super().__init__(path)
-        self.mutagen_obj = mutagen.flac.FLAC(path)
+    mutagen_inst = mutagen.flac.FLAC
 
-    def do_tag(self, dry_run=False):
-        raise NotImplementedError("MutagenFlacSong.do_tag()")
-
-class MutagenMp3Song(Song):
+class MutagenMp3Song(MutagenBaseSong):
     """
     A MutagenMp3Song is a Song that identifies as mp3 and which uses
     mutagen to tag itself.
     """
-    def __init__(self, path):
-        super().__init__(path)
-        self.mutagen_obj = mutagen.easyid3.EasyID3(path)
-
-    def do_tag(self, dry_run=False):
-        raise NotImplementedError("MutagenMp3Song.do_tag()")
+    mutagen_inst = mutagen.easyid3.EasyID3
 
 EXT_MUTAGEN_MAP = {
     ".flac": MutagenFlacSong,

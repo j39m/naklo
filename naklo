@@ -11,7 +11,7 @@ import libnaklo
 def parse_args():
     """Construct and return an argument parser."""
     parser = argparse.ArgumentParser(
-        description="provide templates with which to tag FLAC files."
+        description="tag FLAC and mp3 files."
     )
     parser.add_argument(
         "-c", "--control-file", action="append",
