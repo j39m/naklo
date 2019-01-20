@@ -41,23 +41,21 @@ def main():
 
     controls = list()
     titles = list()
-
-    # For now, we force metaflac usage when tagging songs.
-    # TODO(j39m): change this!
-    args.use_metaflac = True
-
     songs = libnaklo.songs_to_array(
         *args.songs,
         use_metaflac=args.use_metaflac
     )
 
     # Control blocks are ``universal'' in scope.
+    # Create an array of control objects. Each control object is
+    # self-restricting, defining its span for itself.
     if args.control_file:
         for cfn in args.control_file:
             controls.extend(libnaklo.controls_to_array(cfn))
-    # Title files each represent one sweep by themselves. Each file is
-    # a fresh pass at the whole songs array; they do not build on each
-    # other.
+    # Each title file should be ``zipped'' up with the songs array.
+    # Title files do not build on each other. The imagined use case is
+    # if you might want to add titles in two different languages; then
+    # create one title file for each language.
     if args.title_file:
         for tfn in args.title_file:
             titles.append(libnaklo.titles_to_array(tfn))
