@@ -59,6 +59,10 @@ class Song():
     def __delitem__(self, key):
         del self.tags[key]
 
+    def clear(self):
+        """Clear all existing metadata."""
+        raise NotImplementedError("Song.clear()")
+
     def do_tag(self, dry_run=False):
         """
         Act now and tag the song to which I correspond.
@@ -81,6 +85,9 @@ class MetaflacFlacSong(Song):
             retv.extend(["{}={}".format(tag, val) for val in value_list])
         retv.append("")
         return retv
+
+    def clear(self):
+        pass
 
     def do_tag(self, dry_run=False):
         """
@@ -115,7 +122,6 @@ class MutagenBaseSong(Song):
         self.mutagen_obj = self.mutagen_inst(path)
 
     def clear(self):
-        """Clear all my current tags."""
         self.mutagen_obj.clear()
 
     def do_tag(self, dry_run=False):
