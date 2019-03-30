@@ -20,7 +20,7 @@ def controls_to_array(fname):
     and return the resulting array of Control objects.
     """
     with open(fname, "r") as cfp:
-        return [Control(yam) for yam in yaml.load(cfp)]
+        return [Control(yam) for yam in yaml.safe_load(cfp)]
 
 
 def number_tracks(tr_arr):
