@@ -170,8 +170,9 @@ def song_to_mutagen_file(fname):
     (_, ext) = os.path.splitext(fname)
     try:
         fclass = EXT_MUTAGEN_MAP[ext]
-    except KeyError:
-        raise IOError("Bad extension: ``{}''".format(ext))
+    except KeyError as exc:
+        raise KeyError(
+            "No Mutagen file handler found for ``{}''".format(fname)) from exc
     return fclass(fname)
 
 def songs_to_array(*fnames, use_metaflac=True):
