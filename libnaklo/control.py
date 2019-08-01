@@ -33,20 +33,19 @@ def number_tracks(tr_arr):
         track["tracktotal"] = str(total)
         track["tracknumber"] = str(index)
 
+def __range_or_int(span_token):
+    """Expands span tokens, which are either bare ints or int ranges."""
+    try:
+        return list(int(span_token))
+    except ValueError:
+        (low, high) = span_token.split("-")
+        return list(range(int(low), int(high) + 1))
 
 def process_span(span_spec):
     """
     Given a free-form naklo span spec, return the list of the exact set
     described by said span spec.
     """
-    def range_or_int(single_span):
-        """Return a list exploding the span token argument."""
-        try:
-            return [int(single_span),]
-        except ValueError:
-            (low, high) = single_span.split("-")
-            return list(range(int(low), int(high) + 1))
-
     # We might get a bare int, so be sure to handle that case up front.
     try:
         if int(span_spec) == span_spec:
@@ -57,7 +56,7 @@ def process_span(span_spec):
     # Barring the single-int case, go through the usual parsing.
     all_spans = list()
     for each_span in span_spec.split():
-        all_spans.extend(range_or_int(each_span))
+        all_spans.extend(__range_or_int(each_span))
     return all_spans
 
 
