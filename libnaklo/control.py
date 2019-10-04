@@ -36,7 +36,7 @@ def number_tracks(tr_arr):
 def __range_or_int(span_token):
     """Expands span tokens, which are either bare ints or int ranges."""
     try:
-        return list(int(span_token))
+        return [int(span_token),]
     except ValueError:
         (low, high) = span_token.split("-")
         return list(range(int(low), int(high) + 1))
