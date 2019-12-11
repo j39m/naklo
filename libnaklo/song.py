@@ -8,6 +8,7 @@ import os.path
 import mutagen
 import mutagen.flac
 import mutagen.easyid3
+import mutagen.oggopus
 
 __all__ = [
     "songs_to_array",
@@ -160,9 +161,17 @@ class MutagenMp3Song(MutagenBaseSong):
             pass
         super().do_tag(dry_run)
 
+class MutagenOpusSong(MutagenBaseSong):
+    """
+    A MutagenOpusSong is a Song that identifies as (Ogg?) Opus audio and
+    which uses mutagen to tag itself.
+    """
+    mutagen_inst = mutagen.oggopus.OggOpus
+
 EXT_MUTAGEN_MAP = {
     ".flac": MutagenFlacSong,
     ".mp3": MutagenMp3Song,
+    ".opus": MutagenOpusSong,
 }
 
 def song_to_mutagen_file(fname):
