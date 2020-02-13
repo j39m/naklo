@@ -11,14 +11,53 @@ limited extent), and Opus files.
 > impact your ability to use and to hack at this free software; I
 > provide this notice only for attribution purposes.
 
-## Intended data model
+## Control file format
 
-Typically, you feed naklo two types of files.
+> **TODO(j39m):** dogfood this and copy something into
+> reference-examples/.
 
-### Control file
+A naklo control file contains up to three types of blocks. In general,
+the format goes:
 
-A control file is a file containing YAML blocks that can specify many tags.
+```
+# A map of text substitutions that naklo will blindly make to tag values
+# wherever they are encountered. SCREAMING_SNAKE_CASE is not mandatory
+# but is reasonably useful for detecting typos.
+naklo-substitutions:
+    "ONE_NAME": "some value"
+    "ANOTHER_NAME": "another value"
 
-### Title file
+# A map of spans to tags to values. Useful when the tag-value pairs are
+# strongly grouped together in the same span.
+#
+# Note that the leaf node need not be a single string value; it can be a
+# list, enabling you to lay down several values at once for a given tag
+# in a given span.
+classic-tag-block:
+    <span>:
+        <tag>: <value>
+        <tag>:
+            - <value>
+            - <value>
+    <span>:
+        ...
 
-A title file is a plaintext file containing titles, one per line.
+# A map of tags to spans to values. Useful when tag values are not
+# strongly grouped together in the same span.
+#
+# As with the classic-tag-block, note that the leaf node need not be a
+# string value.
+inverted-tag-block:
+    <tag>:
+        <span>: <value>
+        <span>:
+            - <value>
+            - <value>
+    <tag>:
+        ...
+```
+
+You can find further reading
+
+1.  in [the controls module](libnaklo3/controls.pyx) and
+1.  in [the reference-examples/ directory](reference-examples/).
