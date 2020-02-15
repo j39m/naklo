@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import unittest
-import unittest.mock
+from unittest.mock import Mock, call
 import yaml
 
 from libnaklo3.controls import NakloController
@@ -14,10 +14,10 @@ def control_dict_for_testing(contents):
 class MockSong:
 
     def __init__(self):
-        self.add_tag = unittest.mock.Mock(return_value=None)
+        self.add_tag = Mock(return_value=None)
 
-    def assert_tags_added(self, call_list):
-        self.add_tag.assert_has_calls(call_list)
+    def assert_exact_tags_added(self, call_list, any_order=False):
+        self.add_tag.assert_has_calls(call_list, any_order=any_order)
         assert self.add_tag.call_count == len(call_list)
 
 # Some of these tests rely on the apparent behavior of yaml.safe_load()
@@ -192,6 +192,12 @@ class TestBasicTagBlockAddition(unittest.TestCase):
 
 # These tests rely more heavily on the ordered insertion behavior of
 # yaml.safe_load().
+#
+# Maintainer's note: observe the call grouping when calling
+# MockSong.assert_exact_tags_added(). The controller will have processed
+# all tags in the classic-tag-block and then all tags in the
+# inverted-tag-block. Within each tag block, calls are grouped by order
+# of the tag name's first appearance.
 class TestTagApplication(unittest.TestCase):
     """Chiefly tests NakloController.apply_tags()."""
 
@@ -210,10 +216,10 @@ class TestTagApplication(unittest.TestCase):
 
         controller.apply_tags()
 
-        mock_songs[0].assert_tags_added([
-            unittest.mock.call("composer", "Fryderyk Chopin"),
-            unittest.mock.call("location", "Warsaw Philharmonic"),
-            unittest.mock.call("date", "2005-00-00"),
+        mock_songs[1-1].assert_exact_tags_added([
+            call("composer", "Fryderyk Chopin"),
+            call("location", "Warsaw Philharmonic"),
+            call("date", "2005-00-00"),
         ])
 
     def test_inverted_tag_block_application(self):
@@ -233,14 +239,79 @@ class TestTagApplication(unittest.TestCase):
 
         controller.apply_tags()
 
-        mock_songs[0].assert_tags_added([
-            unittest.mock.call("location", "Warsaw Philharmonic"),
-            unittest.mock.call("date", "2005-00-00"),
-            unittest.mock.call("composer", "Claude Debussy"),
+        mock_songs[1-1].assert_exact_tags_added([
+            call("location", "Warsaw Philharmonic"),
+            call("date", "2005-00-00"),
+            call("composer", "Claude Debussy"),
         ])
 
     def test_multiple_tag_block_application(self):
-        raise NotImplementedError("TODO(j39m)")
+        mock_songs = [MockSong() for _ in range(8)]
+        controller = NakloController(mock_songs)
+        controller.add_tag_blocks(control_dict_for_testing(
+            """
+            classic-tag-block:
+                1-8:
+                    artist: Rafał Blechacz
+                    album: Hypothetical Rachmaninoff Album
+                1-6:
+                    artist: Royal Concertgebouw Amsterdam
+                    conductor: Jerzy Semkow
+            inverted-tag-block:
+                composer:
+                    1-6: Sergei Rachmaninoff
+                    "7 8": Maurice Ravel
+                title:
+                    1: Concerto no. 4 in G minor op. 40 - 1. Allegro vivace
+                    2: Concerto no. 4 in G minor op. 40 - 2. Largo
+                    3: Concerto no. 4 in G minor op. 40 - 3. Allegro vivace
+                    4: Concerto no. 2 in C minor op. 18 - 1. Moderato
+                    5: Concerto no. 2 in C minor op. 18 - 2. Allegro sostenuto
+                    6: Concerto no. 2 in C minor op. 18 - 3. Allegro scherzando
+                    7: Menuet sur le nom d'Haydn M. 58
+                    8: La Valse M. 72b
+            """
+        ))
+
+        controller.apply_tags()
+
+        # Verifies the Rachmaninoff parts of the album.
+        common_rach_tags = [
+            call("artist", "Rafał Blechacz"),
+            call("artist", "Royal Concertgebouw Amsterdam"),
+            call("album", "Hypothetical Rachmaninoff Album"),
+            call("conductor", "Jerzy Semkow"),
+            call("composer", "Sergei Rachmaninoff"),
+        ]
+        title_names = [
+            "Concerto no. 4 in G minor op. 40 - 1. Allegro vivace",
+            "Concerto no. 4 in G minor op. 40 - 2. Largo",
+            "Concerto no. 4 in G minor op. 40 - 3. Allegro vivace",
+            "Concerto no. 2 in C minor op. 18 - 1. Moderato",
+            "Concerto no. 2 in C minor op. 18 - 2. Allegro sostenuto",
+            "Concerto no. 2 in C minor op. 18 - 3. Allegro scherzando",
+        ]
+
+        for (index, title) in enumerate(title_names):
+            mock_songs[index].assert_exact_tags_added([
+                *common_rach_tags,
+                call("title", title),
+            ])
+
+        # Verifies the Ravel parts of the album.
+        common_ravel_tags = [
+            call("artist", "Rafał Blechacz"),
+            call("album", "Hypothetical Rachmaninoff Album"),
+            call("composer", "Maurice Ravel"),
+        ]
+        mock_songs[7-1].assert_exact_tags_added([
+            *common_ravel_tags,
+            call("title", "Menuet sur le nom d'Haydn M. 58"),
+        ])
+        mock_songs[8-1].assert_exact_tags_added([
+            *common_ravel_tags,
+            call("title", "La Valse M. 72b"),
+        ])
 
 if __name__ == "__main__":
     unittest.main()
