@@ -149,3 +149,45 @@ cdef tuple process_inverted_tag_block(dict yaml_dictionary, int num_songs):
             inverted_apply(span_spec, tag_name, tag_values, num_songs, result)
 
     return result
+
+
+class NakloController:
+
+    def __init__(self, list songs):
+        self.songs = songs
+        self.processed_tag_blocks = list()
+
+    def __apply_template(self, tuple template):
+        """Applies a single template to all songs."""
+        assert len(template) == len(self.songs), \
+            "BUG: len(template) [{}] != len(self.songs) [{}]".format(
+                len(template), len(self.songs))
+
+        # Enforces the structure returned by the process_\w\+tag_block()
+        # functions above.
+        for (tag_values_pairs, song) in zip(template, self.songs):
+            assert isinstance(tag_values_pairs, dict), \
+                "BUG: expected a dict here"
+
+            for (tag_name, values) in tag_values_pairs.items():
+                assert isinstance(values, tuple), \
+                    "BUG: expected a tuple here"
+
+                for value in values:
+                    song.add_tag(tag_name, value)
+
+    def apply_tags(self):
+        """Applies all templates to all songs."""
+        for template in self.processed_tag_blocks:
+            self.__apply_template(template)
+
+    def clear(self):
+        for song in self.songs:
+            song.clear()
+
+    def enact(self):
+        for song in self.songs:
+            song.enact()
+
+    def add_tag_block(self, dict tag_block):
+        raise NotImplementedError("TODO(j39m)")
