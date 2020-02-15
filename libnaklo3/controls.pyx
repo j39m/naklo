@@ -2,7 +2,7 @@ from cpython cimport bool
 from cpython cimport array
 import array
 
-VALID_TAGS = (
+cdef set VALID_TAGS = set((
     "album",
     "albumartist",
     "albumsort",
@@ -21,9 +21,9 @@ VALID_TAGS = (
     "title",
     "tracknumber",
     "tracktotal",
-)
+))
 
-UNSIGNED_SHORT_ARRAY_TYPE = "H"
+cdef str UNSIGNED_SHORT_ARRAY_TYPE = "H"
 
 
 cdef array.array span_from(str span_spec):
@@ -37,6 +37,8 @@ cdef array.array span_from(str span_spec):
     return span
 
 
+# Creates a span from a string (or an int).
+# Raises ValueError if this cannot be done.
 cdef array.array make_span(span_spec):
     if isinstance(span_spec, int):
         return array.array(UNSIGNED_SHORT_ARRAY_TYPE, [span_spec,])
