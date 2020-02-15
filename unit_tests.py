@@ -11,6 +11,15 @@ def control_dict_for_testing(contents):
     return yaml.safe_load(contents)
 
 
+class MockSong:
+
+    def __init__(self):
+        self.add_tag = unittest.mock.Mock(return_value=None)
+
+    def assert_tags_added(self, call_list):
+        self.add_tag.assert_has_calls(call_list)
+        assert self.add_tag.call_count == len(call_list)
+
 # Some of these tests rely on the apparent behavior of yaml.safe_load()
 # observing the underlying YAML insertion order. Python dictionaries are
 # (today) observant of insertion order, but there's no guarantee that
@@ -22,7 +31,8 @@ class TestBasicTagBlockAddition(unittest.TestCase):
         """
         For testing purposes, we may initialize NakloController
         instances with lists of NoneType. This verifies that we can
-        get away with doing so (as long as we don't attempt to enact()).
+        get away with doing so (as long as we don't attempt to either
+        apply_tags() or to enact()).
         """
         # An empty list shall be fine.
         controller = NakloController(list())
@@ -178,6 +188,59 @@ class TestBasicTagBlockAddition(unittest.TestCase):
         self.assertRaisesRegex(
             ValueError, "^unrecognized block identifier: ``unknowable.+$",
             controller.add_tag_blocks, control_data)
+
+
+# These tests rely more heavily on the ordered insertion behavior of
+# yaml.safe_load().
+class TestTagApplication(unittest.TestCase):
+    """Chiefly tests NakloController.apply_tags()."""
+
+    def test_classic_tag_block_application(self):
+        mock_songs = [MockSong(),]
+        controller = NakloController(mock_songs)
+        controller.add_tag_blocks(control_dict_for_testing(
+            """
+            classic-tag-block:
+                1:
+                    composer: Fryderyk Chopin
+                    location: Warsaw Philharmonic
+                    date: "2005-00-00"
+            """
+        ))
+
+        controller.apply_tags()
+
+        mock_songs[0].assert_tags_added([
+            unittest.mock.call("composer", "Fryderyk Chopin"),
+            unittest.mock.call("location", "Warsaw Philharmonic"),
+            unittest.mock.call("date", "2005-00-00"),
+        ])
+
+    def test_inverted_tag_block_application(self):
+        mock_songs = [MockSong(),]
+        controller = NakloController(mock_songs)
+        controller.add_tag_blocks(control_dict_for_testing(
+            """
+            inverted-tag-block:
+                location:
+                    1: Warsaw Philharmonic
+                date:
+                    1: "2005-00-00"
+                composer:
+                    1: Claude Debussy
+            """
+        ))
+
+        controller.apply_tags()
+
+        mock_songs[0].assert_tags_added([
+            unittest.mock.call("location", "Warsaw Philharmonic"),
+            unittest.mock.call("date", "2005-00-00"),
+            unittest.mock.call("composer", "Claude Debussy"),
+        ])
+
+    def test_multiple_tag_block_application(self):
+        raise NotImplementedError("TODO(j39m)")
 
 if __name__ == "__main__":
     unittest.main()

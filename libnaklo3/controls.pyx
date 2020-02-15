@@ -97,8 +97,8 @@ cdef classic_apply(dict tags_and_values, list spanned_songs):
 # Creates a tuple of tag-value mappings.
 # (
 #   {
-#       tag1: (value1, value2, ...),
-#       tag2: (value1, ...),
+#       tag1: [value1, value2, ...],
+#       tag2: [value1, ...],
 #   },
 #   {
 #       ...
@@ -176,8 +176,8 @@ class NakloController:
                 "BUG: expected a dict here"
 
             for (tag_name, values) in tag_values_pairs.items():
-                assert isinstance(values, tuple), \
-                    "BUG: expected a tuple here"
+                assert isinstance(values, list), \
+                    "BUG: expected a list here"
 
                 for value in values:
                     song.add_tag(tag_name, value)
