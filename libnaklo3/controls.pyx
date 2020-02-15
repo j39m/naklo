@@ -157,35 +157,45 @@ cdef tuple process_inverted_tag_block(dict yaml_dictionary, int num_songs):
     return result
 
 
+# Applies a view of tags to a view of songs.
+# Mutates |songs|.
+cdef apply_template(tuple template, list songs):
+    assert len(template) == len(songs), \
+        "BUG: len(template) [{}] != len(songs) [{}]".format(
+            len(template), len(songs))
+
+    # Enforces the structure returned by the process_\w\+tag_block()
+    # functions above.
+    for (tag_values_pairs, song) in zip(template, songs):
+        assert isinstance(tag_values_pairs, dict), \
+            "BUG: expected a dict here"
+
+        for (tag_name, values) in tag_values_pairs.items():
+            assert isinstance(values, list), \
+                "BUG: expected a list here"
+
+            for value in values:
+                song.add_tag(tag_name, value)
+
+# Applies track numbers and totals.
+# Mutates |songs|.
+cdef apply_track_numbers(list songs):
+    for (index, song) in enumerate(songs):
+        song.add_tag("tracknumber", str(index + 1))
+        song.add_tag("tracktotal", str(len(songs)))
+
+
 class NakloController:
 
     def __init__(self, list songs):
         self.songs = songs
         self.processed_tag_blocks = list()
 
-    def __apply_template(self, tuple template):
-        """Applies a single template to all songs."""
-        assert len(template) == len(self.songs), \
-            "BUG: len(template) [{}] != len(self.songs) [{}]".format(
-                len(template), len(self.songs))
-
-        # Enforces the structure returned by the process_\w\+tag_block()
-        # functions above.
-        for (tag_values_pairs, song) in zip(template, self.songs):
-            assert isinstance(tag_values_pairs, dict), \
-                "BUG: expected a dict here"
-
-            for (tag_name, values) in tag_values_pairs.items():
-                assert isinstance(values, list), \
-                    "BUG: expected a list here"
-
-                for value in values:
-                    song.add_tag(tag_name, value)
-
     def apply_tags(self):
         """Applies all templates to all songs."""
         for template in self.processed_tag_blocks:
-            self.__apply_template(template)
+            apply_template(template, self.songs)
+        apply_track_numbers(self.songs)
 
     def clear(self):
         for song in self.songs:

@@ -220,6 +220,8 @@ class TestTagApplication(unittest.TestCase):
             call("composer", "Fryderyk Chopin"),
             call("location", "Warsaw Philharmonic"),
             call("date", "2005-00-00"),
+            call("tracknumber", "1"),
+            call("tracktotal", "1"),
         ])
 
     def test_inverted_tag_block_application(self):
@@ -243,6 +245,8 @@ class TestTagApplication(unittest.TestCase):
             call("location", "Warsaw Philharmonic"),
             call("date", "2005-00-00"),
             call("composer", "Claude Debussy"),
+            call("tracknumber", "1"),
+            call("tracktotal", "1"),
         ])
 
     def test_multiple_tag_block_application(self):
@@ -296,6 +300,8 @@ class TestTagApplication(unittest.TestCase):
             mock_songs[index].assert_exact_tags_added([
                 *common_rach_tags,
                 call("title", title),
+                call("tracknumber", str(index + 1)),
+                call("tracktotal", str(len(mock_songs))),
             ])
 
         # Verifies the Ravel parts of the album.
@@ -307,10 +313,14 @@ class TestTagApplication(unittest.TestCase):
         mock_songs[7-1].assert_exact_tags_added([
             *common_ravel_tags,
             call("title", "Menuet sur le nom d'Haydn M. 58"),
+            call("tracknumber", "7"),
+            call("tracktotal", str(len(mock_songs))),
         ])
         mock_songs[8-1].assert_exact_tags_added([
             *common_ravel_tags,
             call("title", "La Valse M. 72b"),
+            call("tracknumber", "8"),
+            call("tracktotal", str(len(mock_songs))),
         ])
 
 if __name__ == "__main__":
