@@ -11,7 +11,11 @@ def control_dict_for_testing(contents):
     return yaml.safe_load(contents)
 
 
-class TestNakloControllerBasic(unittest.TestCase):
+# Some of these tests rely on the apparent behavior of yaml.safe_load()
+# observing the underlying YAML insertion order. Python dictionaries are
+# (today) observant of insertion order, but there's no guarantee that
+# the yaml module is...
+class TestBasicTagBlockAddition(unittest.TestCase):
     """Chiefly tests NakloController.add_tag_blocks()."""
 
     def test_trivial_construction(self):
@@ -115,6 +119,64 @@ class TestNakloControllerBasic(unittest.TestCase):
         controller = NakloController([None] * 13)
         self.assertRaisesRegex(
             ValueError, "^invalid tag name: ``General''$",
+            controller.add_tag_blocks, control_data)
+
+    def test_invalid_tag_value(self):
+        """
+        NakloController.add_tag_blocks() shall raise an exception if
+        it the tag block leaf is not a string or list of strings.
+        """
+        control_data = control_dict_for_testing(
+            """
+            classic-tag-block:
+                1-13:
+                    title: "Hello there!"
+            inverted-tag-block:
+                artist:
+                    1-13:
+                        General: "Kenobi!"
+            """
+        )
+        controller = NakloController([None] * 13)
+        self.assertRaisesRegex(
+            ValueError, "^unexpected tag value.+for ``artist''$",
+            controller.add_tag_blocks, control_data)
+
+        control_data = control_dict_for_testing(
+            """
+            inverted-tag-block:
+                artist:
+                    1-13: "Hello there!"
+            classic-tag-block:
+                1-13:
+                    title:
+                        General: "Kenobi!"
+            """
+        )
+        controller = NakloController([None] * 13)
+        self.assertRaisesRegex(
+            ValueError, "^unexpected tag value.+for ``title''$",
+            controller.add_tag_blocks, control_data)
+
+    def test_invalid_control_struct(self):
+        """
+        NakloController.add_tag_blocks() shall raise an exception if
+        it doesn't recognize a top-level block identifier.
+        """
+        control_data = control_dict_for_testing(
+            """
+            unknowable-tag-block: "Hello there!"
+            other-unknowable-tag-block:
+                -   "These entries ought not trigger failure,"
+                -   "Since these tests rely in part on the "
+                -   "apparent insert-order-observant behavior "
+            final-unknowable-tag-block:
+                -   "of yaml.safe_load()."
+            """
+        )
+        controller = NakloController(list())
+        self.assertRaisesRegex(
+            ValueError, "^unrecognized block identifier: ``unknowable.+$",
             controller.add_tag_blocks, control_data)
 
 if __name__ == "__main__":
