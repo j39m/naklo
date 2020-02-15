@@ -38,9 +38,12 @@ cdef array.array span_from(str span_spec):
     for token in span_spec.split():
         try:
             span.append(int(token))
+            continue
         except ValueError:
-            (lower_bound, upper_bound) = token.split("-")
-            span.extend(list(range(int(lower_bound), int(upper_bound) + 1)))
+            # Pop out of this exception handler
+            pass
+        (lower_bound, upper_bound) = token.split("-")
+        span.extend(list(range(int(lower_bound), int(upper_bound) + 1)))
     return span
 
 
