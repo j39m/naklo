@@ -25,6 +25,10 @@ cdef set VALID_TAGS = set((
 
 cdef str UNSIGNED_SHORT_ARRAY_TYPE = "H"
 
+cdef str OVERWIDE_SPAN_EXCEPTION_FORMAT = "overwide span: ``{}''"
+cdef str BAD_TAG_NAME_EXCEPTION_FORMAT = "invalid tag name: ``{}''"
+cdef str BAD_TAG_VALUE_EXCEPTION_FORMAT = \
+    "unexpected tag value ``{}'' for ``{}''"
 
 cdef array.array span_from(str span_spec):
     cdef array.array span = array.array(UNSIGNED_SHORT_ARRAY_TYPE)
@@ -64,8 +68,7 @@ cdef void assert_tag_values_are_strings(list tag_values):
 cdef void classic_apply_single(dict tags_and_values, dict song):
     for (tag_name, tag_values) in tags_and_values.items():
         if tag_name not in VALID_TAGS:
-            raise ValueError(
-                    "invalid tag name: ``{}''".format(tag_name))
+            raise ValueError(BAD_TAG_NAME_EXCEPTION_FORMAT.format(tag_name))
         if tag_name not in song:
             song[tag_name] = list()
 
@@ -76,7 +79,7 @@ cdef void classic_apply_single(dict tags_and_values, dict song):
             song[tag_name].extend(tag_values)
         else:
             raise ValueError(
-                "unexpected tag value ``{}'' for ``{}''".format(
+                BAD_TAG_VALUE_EXCEPTION_FORMAT.format(
                     type(tag_values), tag_name))
 
 
@@ -103,7 +106,7 @@ cdef tuple process_classic_tag_block(dict yaml_dictionary, int num_songs):
         span_now = make_span(span_spec)
 
         if not span_is_well_bounded(span_now, num_songs):
-            raise ValueError("bad span: ``{}''".format(span_spec))
+            raise ValueError(OVERWIDE_SPAN_EXCEPTION_FORMAT.format(span_spec))
         classic_apply(tags_and_values, [result[i-1] for i in span_now])
 
     return result
@@ -120,15 +123,14 @@ cdef void inverted_apply_single(str tag_name, tag_values, song):
         song[tag_name].extend(tag_values)
     else:
         raise ValueError(
-            "unexpected tag value ``{}'' for ``{}''".format(
-                type(tag_values), tag_name))
+            BAD_TAG_VALUE_EXCEPTION_FORMAT.format(type(tag_values), tag_name))
     
 
 cdef void inverted_apply(
         span_spec, str tag_name, tag_values, int num_songs, tuple all_songs):
     span_now = make_span(span_spec)
     if not span_is_well_bounded(span_now, num_songs):
-        raise ValueError("bad span: ``{}''".format(span_spec))
+        raise ValueError(OVERWIDE_SPAN_EXCEPTION_FORMAT.format(span_spec))
 
     for song in [all_songs[i-1] for i in span_now]:
         inverted_apply_single(tag_name, tag_values, song)
@@ -141,8 +143,7 @@ cdef tuple process_inverted_tag_block(dict yaml_dictionary, int num_songs):
 
     for (tag_name, spans_and_values) in yaml_dictionary.items():
         if tag_name not in VALID_TAGS:
-            raise ValueError(
-                    "invalid tag name: ``{}''".format(tag_name))
+            raise ValueError(BAD_TAG_NAME_EXCEPTION_FORMAT.format(tag_name))
 
         for (span_spec, tag_values) in spans_and_values.items():
             inverted_apply(span_spec, tag_name, tag_values, num_songs, result)
