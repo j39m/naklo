@@ -30,6 +30,9 @@ cdef str BAD_TAG_NAME_EXCEPTION_FORMAT = "invalid tag name: ``{}''"
 cdef str BAD_TAG_VALUE_EXCEPTION_FORMAT = \
     "unexpected tag value ``{}'' for ``{}''"
 
+cdef str CLASSIC_TAG_BLOCK_ID = "classic-tag-block"
+cdef str INVERTED_TAG_BLOCK_ID = "inverted-tag-block"
+
 cdef array.array span_from(str span_spec):
     cdef array.array span = array.array(UNSIGNED_SHORT_ARRAY_TYPE)
     for token in span_spec.split():
@@ -189,5 +192,20 @@ class NakloController:
         for song in self.songs:
             song.enact()
 
-    def add_tag_block(self, dict tag_block):
-        raise NotImplementedError("TODO(j39m)")
+    def add_tag_blocks(self, dict tag_blocks):
+        """
+        |tag_blocks| contains at most 2 items,
+        1.  a classic tag block or
+        2.  an inverted tag block.
+        """
+        for (block_identifier, block) in tag_blocks.items():
+            if block_identifier == CLASSIC_TAG_BLOCK_ID:
+                self.processed_tag_blocks.append(process_classic_tag_block(
+                    block, len(self.songs)))
+            elif block_identifier == INVERTED_TAG_BLOCK_ID:
+                self.processed_tag_blocks.append(process_inverted_tag_block(
+                    block, len(self.songs)))
+            else:
+                raise ValueError(
+                    "unrecognized block identifier: ``{}''".format(
+                        block_identifier))
