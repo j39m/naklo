@@ -84,6 +84,8 @@ cdef classic_apply_single(dict tags_and_values, dict song):
 
         if isinstance(tag_values, str):
             song[tag_name].append(tag_values)
+        elif isinstance(tag_values, int):
+            song[tag_name].append(str(tag_values))
         elif isinstance(tag_values, list):
             assert_tag_values_are_strings(tag_values)
             song[tag_name].extend(tag_values)
@@ -128,6 +130,8 @@ cdef inverted_apply_single(str tag_name, tag_values, song):
 
     if isinstance(tag_values, str):
         song[tag_name].append(tag_values)
+    elif isinstance(tag_values, int):
+        song[tag_name].append(int(tag_values))
     elif isinstance(tag_values, list):
         assert_tag_values_are_strings(tag_values)
         song[tag_name].extend(tag_values)
