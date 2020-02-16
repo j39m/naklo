@@ -13,9 +13,6 @@ limited extent), and Opus files.
 
 ## Control file format
 
-> **TODO(j39m):** dogfood this and copy something into
-> reference-examples/.
-
 A naklo control file contains up to two types of blocks. In general,
 the format goes:
 
