@@ -18,7 +18,8 @@ class MockSong:
 
     def assert_exact_tags_added(self, call_list, any_order=False):
         self.add_tag.assert_has_calls(call_list, any_order=any_order)
-        assert self.add_tag.call_count == len(call_list)
+        assert self.add_tag.call_count == len(call_list), \
+            "{} != {}".format(self.add_tag.call_count, len(call_list))
 
 # Some of these tests rely on the apparent behavior of yaml.safe_load()
 # observing the underlying YAML insertion order. Python dictionaries are
@@ -321,6 +322,46 @@ class TestTagApplication(unittest.TestCase):
             call("title", "La Valse M. 72b"),
             call("tracknumber", "8"),
             call("tracktotal", str(len(mock_songs))),
+        ])
+
+    def test_wildcard_span(self):
+        mock_songs = [MockSong() for _ in range(2)]
+        controller = NakloController(mock_songs)
+        controller.add_tag_blocks(control_dict_for_testing(
+            """
+            classic-tag-block:
+                1:
+                    artist: Hello there!
+                    composer: Obi-wan Kenobi
+                2:
+                    artist: General Kenobi!
+                    composer: General Grievous
+                "*":
+                    albumartist: Sheev Palpatine
+            inverted-tag-block:
+                album:
+                    "*": Prequel Memes vol. 1
+            """
+        ))
+
+        controller.apply_tags()
+
+        mock_songs[1-1].assert_exact_tags_added([
+            call("artist", "Hello there!"),
+            call("composer", "Obi-wan Kenobi"),
+            call("albumartist", "Sheev Palpatine"),
+            call("album", "Prequel Memes vol. 1"),
+            call("tracknumber", "1"),
+            call("tracktotal", "2"),
+        ])
+
+        mock_songs[2-1].assert_exact_tags_added([
+            call("artist", "General Kenobi!"),
+            call("composer", "General Grievous"),
+            call("albumartist", "Sheev Palpatine"),
+            call("album", "Prequel Memes vol. 1"),
+            call("tracknumber", "2"),
+            call("tracktotal", "2"),
         ])
 
 if __name__ == "__main__":
