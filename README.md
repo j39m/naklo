@@ -16,17 +16,10 @@ limited extent), and Opus files.
 > **TODO(j39m):** dogfood this and copy something into
 > reference-examples/.
 
-A naklo control file contains up to three types of blocks. In general,
+A naklo control file contains up to two types of blocks. In general,
 the format goes:
 
 ```
-# A map of text substitutions that naklo will blindly make to tag values
-# wherever they are encountered. SCREAMING_SNAKE_CASE is not mandatory
-# but is reasonably useful for detecting typos.
-naklo-substitutions:
-    "ONE_NAME": "some value"
-    "ANOTHER_NAME": "another value"
-
 # A map of spans to tags to values. Useful when the tag-value pairs are
 # strongly grouped together in the same span.
 #
