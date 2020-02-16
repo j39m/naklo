@@ -4,9 +4,9 @@ Given that all songs cohabit the same directory as this file and are
 named `dd-tt.flac`, I opened this file in `vim` and issued
 
 ```sh
-naklo -c <(sed -n 19,30p %) -c <(sed -n 36,48p %) 01-??.flac
-naklo -c <(sed -n 19,30p %) -c <(sed -n 54,73p %) 02-??.flac
-naklo -c <(sed -n 19,30p %) -c <(sed -n 79,92p %) 03-??.flac
+naklo -c <(sed -n 19,30p %) -c <(sed -n 36,47p %) 01-??.flac
+naklo -c <(sed -n 19,30p %) -c <(sed -n 53,72p %) 02-??.flac
+naklo -c <(sed -n 19,30p %) -c <(sed -n 78,90p %) 03-??.flac
 ```
 
 I see three separate places in the booklet where a tempo marking is
@@ -36,11 +36,10 @@ classic-tag-block:
 classic-tag-block:
     "*":
         discnumber: 1
-inverted-tag-block:
-    date:
-        "*":
+        date:
             - "2004-09-29"
             - "2004-09-30"
+inverted-tag-block:
     title:
         1: "Symphony No 6 in D major, Op 60 - Allegro non tanto"
         2: "Symphony No 6 in D major, Op 60 - Adagio"
@@ -79,11 +78,10 @@ inverted-tag-block:
 classic-tag-block:
     "*":
         discnumber: 3
-inverted-tag-block:
-    date:
-        "*":
+        date:
             - "1999-09-29"
             - "1999-09-30"
+inverted-tag-block:
     title:
         1: "Symphony No 9 in E minor, 'From the New World', Op 95 - Adagio - Allegro molto"
         2: "Symphony No 9 in E minor, 'From the New World', Op 95 - Largo"
