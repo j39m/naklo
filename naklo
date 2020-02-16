@@ -1,83 +1,60 @@
 #!/usr/bin/python3
-"""
-naklo is a batch FLAC tagger.
-"""
-
 import sys
+
 import argparse
-import libnaklo
+import yaml
+
+import libnaklo3.songs
+from libnaklo3.controls import NakloController
 
 
-def make_parser():
-    """Construct and return an argument parser."""
+def get_args():
     parser = argparse.ArgumentParser(
-        description="tag FLAC and mp3 files."
+        description="tags files."
     )
     parser.add_argument(
         "-c", "--control-file", action="append",
         help="File of YAML-formatted control blocks",
     )
     parser.add_argument(
-        "-t", "--title-file", action="append",
-        help="File full of newline-separated titles",
-    )
-    parser.add_argument(
         "-p", "--preserve-existing", action="store_true",
         help="Preserve existing tags within input files",
     )
     parser.add_argument(
-        "-m", "--use-metaflac", action="store_true",
-        help="Force naklo to tag with metaflac",
-    )
-    parser.add_argument(
-        "songs", nargs=argparse.REMAINDER, metavar="<target files to tag>"
+        "songs", nargs=argparse.REMAINDER, metavar="<targets ...>"
     )
 
-    return parser
+    args = parser.parse_args()
+
+    if not args.songs:
+        parser.error("No songs to tag.")
+    return args
+
+
+def get_tag_blocks(pathname):
+    with open(pathname, "r") as tbfp:
+        return yaml.safe_load(tbfp.read())
+
+
+def add_control_files(controller, args):
+    """Mutates a |controller| with tag blocks specified in |args|."""
+    for pathname in args.control_file:
+        tag_blocks = get_tag_blocks(pathname)
+        controller.add_tag_blocks(tag_blocks)
 
 
 def main():
-    """Read, process, and write tags."""
-    parser = make_parser()
-    args = parser.parse_args()
-    if not (args.title_file or args.control_file):
-        parser.error("no control or title files given.")
+    args = get_args()
 
-    controls = list()
-    titles = list()
-    songs = libnaklo.songs_to_array(
-        *args.songs,
-        use_metaflac=args.use_metaflac
-    )
+    songs = libnaklo3.songs.songs_from(args.songs)
+    controller = NakloController(songs)
 
+    add_control_files(controller, args)
     if not args.preserve_existing:
-        for song in songs:
-            song.clear()
+        controller.clear()
 
-    # Control blocks are ``universal'' in scope.
-    # Create an array of control objects. Each control object is
-    # self-restricting, defining its span for itself.
-    if args.control_file:
-        for cfn in args.control_file:
-            controls.extend(libnaklo.controls_to_array(cfn))
-    # Each title file should be ``zipped'' up with the songs array.
-    # Title files do not build on each other. The imagined use case is
-    # if you might want to add titles in two different languages; then
-    # create one title file for each language.
-    if args.title_file:
-        for tfn in args.title_file:
-            titles.append(libnaklo.titles_to_array(tfn))
-
-    for ctl in controls:
-        ctl.apply_to_songs(songs)
-    for t_arr in titles:
-        libnaklo.apply_titles_to_songs(t_arr, songs)
-    libnaklo.number_tracks(songs)
-
-    for song in songs:
-        # TODO(j39m): catch IOError upon failure.
-        song.do_tag()
-
+    controller.apply_tags()
+    controller.enact()
     return 0
 
 if __name__ == "__main__":
