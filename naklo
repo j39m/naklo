@@ -21,6 +21,10 @@ def get_args():
         help="Preserve existing tags within input files",
     )
     parser.add_argument(
+        "-n", "--dry-run", action="store_true",
+        help="Print what would be done, but don't do it",
+    )
+    parser.add_argument(
         "songs", nargs=argparse.REMAINDER, metavar="<targets ...>"
     )
 
@@ -50,10 +54,15 @@ def main():
     controller = NakloController(songs)
 
     add_control_files(controller, args)
-    if not args.preserve_existing:
-        controller.clear()
 
     controller.apply_tags()
+    if args.dry_run:
+        for song in songs:
+            print(song)
+        return 0
+
+    if not args.preserve_existing:
+        controller.clear()
     controller.enact()
     return 0
 
