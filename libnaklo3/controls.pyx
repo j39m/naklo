@@ -75,10 +75,14 @@ cdef assert_tag_values_are_strings(list tag_values):
                 "unexpected non-str detected: ``{}''".format(str(tag_values)))
 
 
-cdef list listify_tag_values(raw_tag_values):
+cdef list listify_tag_values(str tag_name, raw_tag_values):
     if (isinstance(raw_tag_values, list)):
         assert_tag_values_are_strings(raw_tag_values)
         return raw_tag_values
+    elif (isinstance(raw_tag_values, dict)):
+        raise ValueError(
+            BAD_TAG_VALUE_EXCEPTION_FORMAT.format(
+                str(raw_tag_values), tag_name))
     return [str(raw_tag_values),]
 
 
@@ -91,14 +95,16 @@ cdef apply_to_view(str tag_name, list tag_values, list spanned_songs):
         try:
             song[tag_name].extend(tag_values)
         except KeyError:
-            song[tag_name] = tag_values
+            # This copy is important; the song is taking ownership of a
+            # separate instance of |tag_values|.
+            song[tag_name] = list(tag_values)
 
 
 cdef classic_apply(dict tags_and_values, list spanned_songs):
     for (tag_name, tag_values) in tags_and_values.items():
         if tag_name not in VALID_TAGS:
             raise ValueError(BAD_TAG_NAME_EXCEPTION_FORMAT.format(tag_name))
-        apply_to_view(tag_name, listify_tag_values(tag_values), spanned_songs)
+        apply_to_view(tag_name, listify_tag_values(tag_name, tag_values), spanned_songs)
 
 
 # Creates a tuple of tag-value mappings.
