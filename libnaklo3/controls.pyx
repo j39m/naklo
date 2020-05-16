@@ -75,29 +75,30 @@ cdef assert_tag_values_are_strings(list tag_values):
                 "unexpected non-str detected: ``{}''".format(str(tag_values)))
 
 
-cdef classic_apply_single(dict tags_and_values, dict song):
-    for (tag_name, tag_values) in tags_and_values.items():
-        if tag_name not in VALID_TAGS:
-            raise ValueError(BAD_TAG_NAME_EXCEPTION_FORMAT.format(tag_name))
-        if tag_name not in song:
-            song[tag_name] = list()
+cdef list listify_tag_values(raw_tag_values):
+    if (isinstance(raw_tag_values, list)):
+        assert_tag_values_are_strings(raw_tag_values)
+        return raw_tag_values
+    return [str(raw_tag_values),]
 
-        if isinstance(tag_values, str):
-            song[tag_name].append(tag_values)
-        elif isinstance(tag_values, int):
-            song[tag_name].append(str(tag_values))
-        elif isinstance(tag_values, list):
-            assert_tag_values_are_strings(tag_values)
+
+# Applies |tag_name| having |tag_values| to |spanned_songs|.
+# Caller is responsible for having dealt creating |spanned_songs|
+# from a previously specified span.
+cdef apply_to_view(str tag_name, list tag_values, list spanned_songs):
+    assert_tag_values_are_strings(tag_values)
+    for song in spanned_songs:
+        try:
             song[tag_name].extend(tag_values)
-        else:
-            raise ValueError(
-                BAD_TAG_VALUE_EXCEPTION_FORMAT.format(
-                    type(tag_values), tag_name))
+        except KeyError:
+            song[tag_name] = tag_values
 
 
 cdef classic_apply(dict tags_and_values, list spanned_songs):
-    for song in spanned_songs:
-        classic_apply_single(tags_and_values, song)
+    for (tag_name, tag_values) in tags_and_values.items():
+        if tag_name not in VALID_TAGS:
+            raise ValueError(BAD_TAG_NAME_EXCEPTION_FORMAT.format(tag_name))
+        apply_to_view(tag_name, listify_tag_values(tag_values), spanned_songs)
 
 
 # Creates a tuple of tag-value mappings.
@@ -124,43 +125,20 @@ cdef tuple process_classic_tag_block(dict yaml_dictionary, int num_songs):
     return result
 
 
-cdef inverted_apply_single(str tag_name, tag_values, song):
-    if tag_name not in song:
-        song[tag_name] = list()
-
-    if isinstance(tag_values, str):
-        song[tag_name].append(tag_values)
-    elif isinstance(tag_values, int):
-        song[tag_name].append(int(tag_values))
-    elif isinstance(tag_values, list):
-        assert_tag_values_are_strings(tag_values)
-        song[tag_name].extend(tag_values)
-    else:
-        raise ValueError(
-            BAD_TAG_VALUE_EXCEPTION_FORMAT.format(type(tag_values), tag_name))
-    
-
-cdef inverted_apply(
-        span_spec, str tag_name, tag_values, int num_songs, tuple all_songs):
-    span_now = make_span(span_spec, num_songs)
-    if not span_is_well_bounded(span_now, num_songs):
-        raise ValueError(OVERWIDE_SPAN_EXCEPTION_FORMAT.format(span_spec))
-
-    for song in [all_songs[i-1] for i in span_now]:
-        inverted_apply_single(tag_name, tag_values, song)
-
-
 # Has identical return type to process_classic_tag_block() but is cast
 # from an inverted tag block instead.
 cdef tuple process_inverted_tag_block(dict yaml_dictionary, int num_songs):
     cdef tuple result = tuple(dict() for _ in range(num_songs))
 
     for (tag_name, spans_and_values) in yaml_dictionary.items():
-        if tag_name not in VALID_TAGS:
-            raise ValueError(BAD_TAG_NAME_EXCEPTION_FORMAT.format(tag_name))
-
         for (span_spec, tag_values) in spans_and_values.items():
-            inverted_apply(span_spec, tag_name, tag_values, num_songs, result)
+            span_now = make_span(span_spec, num_songs)
+
+            if not span_is_well_bounded(span_now, num_songs):
+                raise ValueError(
+                    OVERWIDE_SPAN_EXCEPTION_FORMAT.format(span_spec))
+            classic_apply({tag_name: tag_values},
+                          [result[i-1] for i in span_now])
 
     return result
 
