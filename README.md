@@ -11,7 +11,11 @@ limited extent), and Opus files.
 > impact your ability to use and to hack at this free software; I
 > provide this notice only for attribution purposes.
 
-## Control file format
+## Control files: format
+
+I encourage the gentle reader to browse
+[the reference-examples/ directory](reference-examples/) to get a feel
+for how control files work; the formal definition is a little stuffy.
 
 A naklo control file contains up to two types of blocks. In general,
 the format goes:
@@ -47,7 +51,16 @@ inverted-tag-block:
         ...
 ```
 
-You can find further reading
+A *span* is a numerical specification consisting of any of
 
-1.  in [the controls module](libnaklo3/controls.pyx) and
-1.  in [the reference-examples/ directory](reference-examples/).
+*   a single numerical token,
+*   a set of tracks denoted by `<lower>-<upper>` (inclusive), or
+*   the wildcard token, denoted by a literal star `*`.
+
+## Control files: known caveats
+
+1.  Wildcard spans (`*`) must be quoted, lest the YAML fail to parse.
+1.  While most leaf values need not be enclosed in quotes, you will need
+    to do something about leaf values containing colon characters (`:`).
+    If quote enclosure is not feasible, I prefer to use YAML's `>-`
+    notation.
