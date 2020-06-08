@@ -51,7 +51,7 @@ class FlacSong(BaseMutagenSong):
 class Mp3Song(BaseMutagenSong):
 
     def __init__(self, path):
-        super().__init__(path, mutagen.easyid3.EasyId3)
+        super().__init__(path, mutagen.easyid3.EasyID3)
 
     # Note that "albumartist" appears to map to "performer" and
     # "performer" to nothing at all.
