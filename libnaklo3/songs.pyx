@@ -27,6 +27,12 @@ cdef class BaseMutagenSong:
                 ))
         return "\n".join(result)
 
+    def get_tag_keys(self):
+        return self.tags.keys()
+
+    def get_path(self):
+        return self.path
+
     def add_tag(self, str tag, str value):
         try:
             self.tags[tag].append(value)

@@ -47,6 +47,36 @@ def add_control_files(controller, args):
         controller.add_tag_blocks(tag_blocks)
 
 
+def check_tag_propagation(tagged_songs):
+    """Checks that any tag that ever appears, appears everywhere.
+
+    This function assumes that any tag appearing at least once should
+    appear on every song in `tagged_songs`. It prints a warning for each
+    song missing any observed tag.
+    """
+    unique_tags = set()
+    for song in tagged_songs:
+        unique_tags.update(song.get_tag_keys())
+
+    result = 0
+    for song in tagged_songs:
+        missing_tags = [tag for tag in unique_tags
+                        if tag not in song.get_tag_keys()]
+        missing_tags.sort()
+        if missing_tags:
+            result = 1
+            print("WARNING: {} lacks {}".format(song.get_path(),
+                    ", ".join(missing_tags)))
+
+    return result
+                
+
+def dry_run(tagged_songs):
+    for song in tagged_songs:
+        print(song)
+    return check_tag_propagation(tagged_songs)
+
+
 def main():
     args = get_args()
 
@@ -57,9 +87,7 @@ def main():
 
     controller.apply_tags()
     if args.dry_run:
-        for song in songs:
-            print(song)
-        return 0
+        return dry_run(songs)
 
     if not args.preserve_existing:
         controller.clear()
