@@ -23,20 +23,8 @@ cdef set VALID_TAGS = set((
     "tracktotal",
 ))
 
-cdef str UNSIGNED_SHORT_ARRAY_TYPE = "H"
-
-cdef str GLOB_SPAN = "*"
-
-cdef str OVERWIDE_SPAN_EXCEPTION_FORMAT = "overwide span: ``{}''"
-cdef str BAD_TAG_NAME_EXCEPTION_FORMAT = "invalid tag name: ``{}''"
-cdef str BAD_TAG_VALUE_EXCEPTION_FORMAT = \
-    "unexpected tag value ``{}'' for ``{}''"
-
-cdef str CLASSIC_TAG_BLOCK_ID = "classic-tag-block"
-cdef str INVERTED_TAG_BLOCK_ID = "inverted-tag-block"
-
 cdef array.array span_from(str span_spec):
-    cdef array.array span = array.array(UNSIGNED_SHORT_ARRAY_TYPE)
+    cdef array.array span = array.array("H")
     for token in span_spec.split():
         try:
             span.append(int(token))
@@ -53,9 +41,9 @@ cdef array.array span_from(str span_spec):
 # Raises ValueError if this cannot be done.
 cdef array.array make_span(span_spec, int total_num_songs):
     if isinstance(span_spec, int):
-        return array.array(UNSIGNED_SHORT_ARRAY_TYPE, [span_spec,])
+        return array.array("H", [span_spec,])
     elif isinstance(span_spec, str):
-        if span_spec == GLOB_SPAN:
+        if span_spec == "*":
             span_spec = "1-{}".format(total_num_songs)
         return span_from(span_spec)
     raise ValueError("expected span spec, got ``{}''".format(span_spec))
@@ -81,7 +69,7 @@ cdef list listify_tag_values(str tag_name, raw_tag_values):
         return raw_tag_values
     elif (isinstance(raw_tag_values, dict)):
         raise ValueError(
-            BAD_TAG_VALUE_EXCEPTION_FORMAT.format(
+            "unexpected tag value {} for ``{}''".format(
                 str(raw_tag_values), tag_name))
     return [str(raw_tag_values),]
 
@@ -103,7 +91,7 @@ cdef apply_to_view(str tag_name, list tag_values, list spanned_songs):
 cdef classic_apply(dict tags_and_values, list spanned_songs):
     for (tag_name, tag_values) in tags_and_values.items():
         if tag_name not in VALID_TAGS:
-            raise ValueError(BAD_TAG_NAME_EXCEPTION_FORMAT.format(tag_name))
+            raise ValueError("invalid tag name: ``{}''".format(tag_name))
         apply_to_view(tag_name, listify_tag_values(tag_name, tag_values), spanned_songs)
 
 
@@ -125,7 +113,7 @@ cdef tuple process_classic_tag_block(dict yaml_dictionary, int num_songs):
         span_now = make_span(span_spec, num_songs)
 
         if not span_is_well_bounded(span_now, num_songs):
-            raise ValueError(OVERWIDE_SPAN_EXCEPTION_FORMAT.format(span_spec))
+            raise ValueError("overwide span: {}".format(span_spec))
         classic_apply(tags_and_values, [result[i-1] for i in span_now])
 
     return result
@@ -141,8 +129,7 @@ cdef tuple process_inverted_tag_block(dict yaml_dictionary, int num_songs):
             span_now = make_span(span_spec, num_songs)
 
             if not span_is_well_bounded(span_now, num_songs):
-                raise ValueError(
-                    OVERWIDE_SPAN_EXCEPTION_FORMAT.format(span_spec))
+                raise ValueError("overwide span: {}".format(span_spec))
             classic_apply({tag_name: tag_values},
                           [result[i-1] for i in span_now])
 
@@ -206,10 +193,10 @@ cdef class NakloController:
         2.  an inverted tag block.
         """
         for (block_identifier, block) in tag_blocks.items():
-            if block_identifier == CLASSIC_TAG_BLOCK_ID:
+            if block_identifier == "classic-tag-block":
                 self.processed_tag_blocks.append(process_classic_tag_block(
                     block, len(self.songs)))
-            elif block_identifier == INVERTED_TAG_BLOCK_ID:
+            elif block_identifier == "inverted-tag-block":
                 self.processed_tag_blocks.append(process_inverted_tag_block(
                     block, len(self.songs)))
             else:
