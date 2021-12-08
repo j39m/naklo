@@ -64,3 +64,15 @@ A *span* is a numerical specification consisting of any of
     to do something about leaf values containing colon characters (`:`).
     If quote enclosure is not feasible, I prefer to use YAML's `>-`
     notation.
+
+## Build Notes
+
+The first time you build, you will need to manually symlink the shared
+objects spawned under `build/` into `libnaklo3/`. You'll also need to
+repeat this whenever you upgrade Python.
+
+After the symlink step, you should be able to
+
+```
+./setup.py build_ext && ./unit_tests.py
+```
