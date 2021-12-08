@@ -21,59 +21,53 @@ cdef set VALID_TAGS = set((
     "tracktotal",
 ))
 
-# Applies |tag_name| having |tag_values| to |spanned_songs|.
-# Caller is responsible for having dealt creating |spanned_songs|
-# from a previously specified span.
-cdef apply_to_view(str tag_name, list tag_values, list spanned_songs):
-    for song in spanned_songs:
+cdef unnest_dictionary(dict nested, int level, callback):
+    """
+    Descends into `nested` until `level` is reached, invoking
+    `callback` on the accrued keys and the lowest-level value.
+    """
+    assert level >= 0, "BUG: unnest_dictionary() called with level < 0"
+    if level == 0:
+        for (key, value) in nested.items():
+            callback(key, value)
+        return
+    for (key, value) in nested.items():
+        unnest_dictionary(
+                value, level - 1, lambda *args: callback(key, *args))
+
+def apply(song_tuple, num_songs, tag_name, span_spec, value):
+    if tag_name not in VALID_TAGS:
+        raise ValueError("invalid tag name: ``{}''".format(tag_name))
+    span = controls_util.parse_span(span_spec, num_songs)
+    for i in span:
+        song = song_tuple[i-1]
+
+        # Note: `listify_tag_values()` returns a new list, never a
+        # reference to the original `value`. This is important, because
+        # it prevents multiple songs from referring to the same data
+        # that holds tag values.
+        values_copy = controls_util.listify_tag_values(value)
         try:
-            song[tag_name].extend(tag_values)
+            song[tag_name].extend(values_copy)
         except KeyError:
-            # This copy is important; the song is taking ownership of a
-            # separate instance of |tag_values|.
-            song[tag_name] = list(tag_values)
+            song[tag_name] = values_copy
 
-
-cdef classic_apply(dict tags_and_values, list spanned_songs):
-    for (tag_name, tag_values) in tags_and_values.items():
-        if tag_name not in VALID_TAGS:
-            raise ValueError("invalid tag name: ``{}''".format(tag_name))
-        apply_to_view(tag_name,
-                controls_util.listify_tag_values(tag_name, tag_values),
-                spanned_songs)
-
-
-# Creates a tuple of tag-value mappings.
-# (
-#   {
-#       tag1: [value1, value2, ...],
-#       tag2: [value1, ...],
-#   },
-#   {
-#       ...
-#   },
-#   ...
-# )
 cdef tuple process_classic_tag_block(dict yaml_dictionary, int num_songs):
     cdef tuple result = tuple(dict() for _ in range(num_songs))
 
-    for (span_spec, tags_and_values) in yaml_dictionary.items():
-        span_now = controls_util.parse_span(span_spec, num_songs)
-        classic_apply(tags_and_values, [result[i-1] for i in span_now])
-
+    # The hierarchy is span, tag name, tag value.
+    unnest_dictionary(yaml_dictionary, 1,
+            lambda s, t, v: apply(result, num_songs, t, s, v))
     return result
-
 
 # Has identical return type to process_classic_tag_block() but is cast
 # from an inverted tag block instead.
 cdef tuple process_inverted_tag_block(dict yaml_dictionary, int num_songs):
     cdef tuple result = tuple(dict() for _ in range(num_songs))
 
-    for (tag_name, spans_and_values) in yaml_dictionary.items():
-        for (span_spec, tag_values) in spans_and_values.items():
-            span_now = controls_util.parse_span(span_spec, num_songs)
-            classic_apply({tag_name: tag_values},
-                          [result[i-1] for i in span_now])
+    # The hierarchy is tag name, span, tag value.
+    unnest_dictionary(yaml_dictionary, 1,
+            lambda t, s, v: apply(result, num_songs, t, s, v))
     return result
 
 
@@ -107,6 +101,17 @@ cdef apply_track_numbers(list songs):
 
 cdef class NakloController:
     cdef list songs
+    # Tuple of tag-value mappings:
+    # (
+    #   {
+    #       tag1: [value1, value2, ...],
+    #       tag2: [value1, ...],
+    #   },
+    #   {
+    #       ...
+    #   },
+    #   ...
+    # )
     cdef list processed_tag_blocks
 
     def __init__(self, list songs):

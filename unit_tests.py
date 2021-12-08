@@ -100,7 +100,7 @@ class TestBasicTagBlockAddition(unittest.TestCase):
             """
             classic-tag-block:
                 not-a-span:
-                    tag: value
+                    artist: Some Artist
             """
         )
         controller = NakloController(list())
@@ -170,7 +170,7 @@ class TestBasicTagBlockAddition(unittest.TestCase):
         )
         controller = NakloController([None] * 13)
         self.assertRaisesRegex(
-            ValueError, "^unexpected tag value.+for ``artist''$",
+            ValueError, "^unexpected dict value.+$",
             controller.add_tag_blocks, control_data)
 
         control_data = control_dict_for_testing(
@@ -186,7 +186,7 @@ class TestBasicTagBlockAddition(unittest.TestCase):
         )
         controller = NakloController([None] * 13)
         self.assertRaisesRegex(
-            ValueError, "^unexpected tag value.+for ``title''$",
+            ValueError, "^unexpected dict value.+$",
             controller.add_tag_blocks, control_data)
 
     def test_invalid_control_struct(self):

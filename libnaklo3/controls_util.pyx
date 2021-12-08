@@ -41,12 +41,11 @@ cdef assert_tag_values_are_strings(list tag_values):
             raise ValueError(
                 "unexpected non-str detected: ``{}''".format(str(tag_values)))
 
-def listify_tag_values(str tag_name, raw_tag_values):
+def listify_tag_values(raw_tag_values):
     if (isinstance(raw_tag_values, list)):
         assert_tag_values_are_strings(raw_tag_values)
-        return raw_tag_values
+        return list(raw_tag_values)
     elif (isinstance(raw_tag_values, dict)):
         raise ValueError(
-            "unexpected tag value {} for ``{}''".format(
-                str(raw_tag_values), tag_name))
+                "unexpected dict value {}".format(str(raw_tag_values)))
     return [str(raw_tag_values),]
