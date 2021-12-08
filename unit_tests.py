@@ -4,15 +4,14 @@ import unittest
 from unittest.mock import Mock, call
 import yaml
 
+import libnaklo3.controls_util
 from libnaklo3.controls import NakloController
-
 
 def control_dict_for_testing(contents):
     return yaml.safe_load(contents)
 
 
 class MockSong:
-
     def __init__(self):
         self.add_tag = Mock(return_value=None)
 
@@ -20,6 +19,27 @@ class MockSong:
         self.add_tag.assert_has_calls(call_list, any_order=any_order)
         assert self.add_tag.call_count == len(call_list), \
             "{} != {}".format(self.add_tag.call_count, len(call_list))
+
+class TestParseSpan(unittest.TestCase):
+    def test_integer_span(self):
+        self.assertRaisesRegex(ValueError, "^bad span:.+$",
+            libnaklo3.controls_util.parse_span, "", 1)
+        self.assertRaisesRegex(ValueError, "^bad span:.+$",
+            libnaklo3.controls_util.parse_span, 2, 1)
+        self.assertRaisesRegex(ValueError, "^bad span:.+$",
+            libnaklo3.controls_util.parse_span, "2", 1)
+
+    def test_ranged_span(self):
+        self.assertRaisesRegex(ValueError, "^bad span:.+$",
+            libnaklo3.controls_util.parse_span, "1-2", 1)
+        self.assertSequenceEqual(
+            libnaklo3.controls_util.parse_span("1-5", 5),
+            range(1, 6))
+
+    def test_mixed_span(self):
+        self.assertSequenceEqual(
+            libnaklo3.controls_util.parse_span("1 3 5-8 11", 11),
+            (1, 3, 5, 6, 7, 8, 11))
 
 # Some of these tests rely on the apparent behavior of yaml.safe_load()
 # observing the underlying YAML insertion order. Python dictionaries are
@@ -54,7 +74,7 @@ class TestBasicTagBlockAddition(unittest.TestCase):
             """
         )
         controller = NakloController(list())
-        self.assertRaisesRegex(ValueError, "^overwide span:.+$",
+        self.assertRaisesRegex(ValueError, "^bad span:.+$",
             controller.add_tag_blocks, control_data)
 
         control_data = control_dict_for_testing(
@@ -65,7 +85,7 @@ class TestBasicTagBlockAddition(unittest.TestCase):
             """
         )
         controller = NakloController(list())
-        self.assertRaisesRegex(ValueError, "^overwide span:.+$",
+        self.assertRaisesRegex(ValueError, "^bad span:.+$",
             controller.add_tag_blocks, control_data)
 
     def test_invalid_span_exception(self):
