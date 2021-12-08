@@ -177,7 +177,9 @@ cdef apply_track_numbers(list songs):
         song.add_tag("tracktotal", str(len(songs)))
 
 
-class NakloController:
+cdef class NakloController:
+    cdef list songs
+    cdef list processed_tag_blocks
 
     def __init__(self, list songs):
         self.songs = songs
