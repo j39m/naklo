@@ -1,4 +1,5 @@
 import libnaklo3.controls_util as controls_util
+import libnaklo3.title_merge_block as title_merge_block
 
 cdef set VALID_TAGS = set((
     "album",
@@ -145,6 +146,10 @@ cdef class NakloController:
             elif block_identifier == "inverted-tag-block":
                 self.processed_tag_blocks.append(process_inverted_tag_block(
                     block, len(self.songs)))
+            elif block_identifier == "title-merge-block":
+                self.processed_tag_blocks.append(
+                        title_merge_block.process(
+                            block, len(self.songs)))
             else:
                 raise ValueError(
                     "unrecognized block identifier: ``{}''".format(

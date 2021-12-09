@@ -41,6 +41,85 @@ class TestParseSpan(unittest.TestCase):
             libnaklo3.controls_util.parse_span("1 3 5-8 11", 11),
             (1, 3, 5, 6, 7, 8, 11))
 
+class TestTitleMergeBlock(unittest.TestCase):
+    def test_simple_merge(self):
+        songs = [MockSong() for _ in range(6)]
+        controller = NakloController(songs)
+        controller.add_tag_blocks(control_dict_for_testing(
+            """
+            title-merge-block:
+                "*": Unit Test Cantata -
+                "1 3 5": Part One -
+                "2 4 6": Part Two -
+                1: The Beginning
+                "2-4": The Middle
+                6: The End
+            """
+        ))
+        controller.apply_tags()
+
+        songs[1-1].assert_exact_tags_added([
+            call("title", "Unit Test Cantata - Part One - The Beginning"),
+            call("tracknumber", "1"),
+            call("tracktotal", "6"),
+        ])
+        songs[2-1].assert_exact_tags_added([
+            call("title", "Unit Test Cantata - Part Two - The Middle"),
+            call("tracknumber", "2"),
+            call("tracktotal", "6"),
+        ])
+        songs[3-1].assert_exact_tags_added([
+            call("title", "Unit Test Cantata - Part One - The Middle"),
+            call("tracknumber", "3"),
+            call("tracktotal", "6"),
+        ])
+        songs[4-1].assert_exact_tags_added([
+            call("title", "Unit Test Cantata - Part Two - The Middle"),
+            call("tracknumber", "4"),
+            call("tracktotal", "6"),
+        ])
+        songs[5-1].assert_exact_tags_added([
+            call("title", "Unit Test Cantata - Part One -"),
+            call("tracknumber", "5"),
+            call("tracktotal", "6"),
+        ])
+        songs[6-1].assert_exact_tags_added([
+            call("title", "Unit Test Cantata - Part Two - The End"),
+            call("tracknumber", "6"),
+            call("tracktotal", "6"),
+        ])
+
+    def test_merge_with_inverted_block(self):
+        songs = [MockSong() for _ in range(2)]
+        controller = NakloController(songs)
+        controller.add_tag_blocks(control_dict_for_testing(
+            """
+            inverted-tag-block:
+                title:
+                    01: Hello there!
+                    02: General Kenobi!
+
+            title-merge-block:
+                "*": Is that legal?
+                01: Don't ask stupid questions.
+                02: I will make it legal.
+            """
+        ))
+        controller.apply_tags()
+
+        songs[1-1].assert_exact_tags_added([
+            call("title", "Hello there!"),
+            call("title", "Is that legal? Don't ask stupid questions."),
+            call("tracknumber", "1"),
+            call("tracktotal", "2"),
+        ])
+        songs[2-1].assert_exact_tags_added([
+            call("title", "General Kenobi!"),
+            call("title", "Is that legal? I will make it legal."),
+            call("tracknumber", "2"),
+            call("tracktotal", "2"),
+        ])
+
 # Some of these tests rely on the apparent behavior of yaml.safe_load()
 # observing the underlying YAML insertion order. Python dictionaries are
 # (today) observant of insertion order, but there's no guarantee that
