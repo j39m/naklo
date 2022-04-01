@@ -99,6 +99,13 @@ cdef apply_track_numbers(list songs):
         song.add_tag("tracknumber", str(index + 1))
         song.add_tag("tracktotal", str(len(songs)))
 
+cdef dict block_process_map = {
+    "classic-tag-block": process_classic_tag_block,
+    "span-tag-block": process_classic_tag_block,
+    "inverted-tag-block": process_inverted_tag_block,
+    "tag-span-block": process_inverted_tag_block,
+    "title-merge-block": title_merge_block.process,
+}
 
 cdef class NakloController:
     cdef list songs
@@ -139,18 +146,11 @@ cdef class NakloController:
         1.  a classic tag block or
         2.  an inverted tag block.
         """
-        for (block_identifier, block) in tag_blocks.items():
-            if block_identifier == "classic-tag-block":
-                self.processed_tag_blocks.append(process_classic_tag_block(
-                    block, len(self.songs)))
-            elif block_identifier == "inverted-tag-block":
-                self.processed_tag_blocks.append(process_inverted_tag_block(
-                    block, len(self.songs)))
-            elif block_identifier == "title-merge-block":
-                self.processed_tag_blocks.append(
-                        title_merge_block.process(
-                            block, len(self.songs)))
-            else:
+        for (block_name, block) in tag_blocks.items():
+            if block_name not in block_process_map:
                 raise ValueError(
-                    "unrecognized block identifier: ``{}''".format(
-                        block_identifier))
+                    "unrecognized block name: ``{}''".format(
+                        block_name))
+            process_cb = block_process_map[block_name]
+            self.processed_tag_blocks.append(
+                    process_cb(block, len(self.songs)))

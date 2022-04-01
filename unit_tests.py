@@ -286,7 +286,7 @@ class TestBasicTagBlockAddition(unittest.TestCase):
         )
         controller = NakloController(list())
         self.assertRaisesRegex(
-            ValueError, "^unrecognized block identifier: ``unknowable.+$",
+            ValueError, "^unrecognized block name: ``unknowable.+$",
             controller.add_tag_blocks, control_data)
 
 
@@ -420,6 +420,31 @@ class TestTagApplication(unittest.TestCase):
             *common_ravel_tags,
             call("title", "La Valse M. 72b"),
             call("tracknumber", "8"),
+            call("tracktotal", str(len(mock_songs))),
+        ])
+
+    def test_tag_block_aliases(self):
+        mock_songs = [MockSong() for _ in range(1)]
+        controller = NakloController(mock_songs)
+        controller.add_tag_blocks(control_dict_for_testing(
+            """
+            # alias for "classic-tag-block"
+            span-tag-block:
+                01:
+                    artist: Rafał Blechacz
+            # alias for "inverted-tag-block"
+            tag-span-block:
+                composer:
+                    01: Francis Poulenc
+            """
+        ))
+
+        controller.apply_tags()
+
+        mock_songs[1-1].assert_exact_tags_added([
+            call("artist", "Rafał Blechacz"),
+            call("composer", "Francis Poulenc"),
+            call("tracknumber", "1"),
             call("tracktotal", str(len(mock_songs))),
         ])
 
