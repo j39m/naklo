@@ -11,45 +11,65 @@ limited extent), and Opus files.
 > impact your ability to use and to hack at this free software; I
 > provide this notice only for attribution purposes.
 
-## Control files: format
+## Control Files: Example
 
-I encourage the gentle reader to browse
-[the reference-examples/ directory](reference-examples/) to get a feel
-for how control files work; the formal definition is a little stuffy.
+Before consulting the formal definition of the `naklo` control blocks,
+consider this example that tags the "Ghibli Jazz" album:
 
-A naklo control file contains up to two types of blocks. In general,
-the format goes:
+```yaml
+span-tag-block:
+  "*":
+    album: Ghibli Jazz
+    albumartist: All That Jazz
+    arranger: Tomoo Nogami
+    genre:
+      - Anime
+      - Jazz
 
+tag-span-block:
+  composer:
+    01 02 04-06 08 10 12: Joe Hisaishi
+    03: Yumi Arai
+    07:
+      - Bill Danoff
+      - Taffy Nivert
+      - John Denver
+    09: Haruomi Hosono
+    11: Tokiko Kato
+  artist:
+    01 03 05 07 09 11: Yuriko Kuwahara
+    "*": All That Jazz
+
+title-merge-block:
+  01: 君をのせて
+  02: 海の見える街
+  03: やさしさに包まれたなら
+  04: 風の通り道
+  05: となりのトトロ
+  06: 人生のメリーゴーランド
+  07: カントリーロード
+  08: もののけ姫
+  09: 風の谷のナウシカ
+  10: ナウシカ・レクイエム
+  11: 時には昔の話を
+  12: 崖の上のポニョ
 ```
-# A map of spans to tags to values. Useful when the tag-value pairs are
-# strongly grouped together in the same span.
-#
-# Note that the leaf node need not be a single string value; it can be a
-# list, enabling you to lay down several values at once for a given tag
-# in a given span.
-classic-tag-block:
-    <span>:
-        <tag>: <value>
-        <tag>:
-            - <value>
-            - <value>
-    <span>:
-        ...
 
-# A map of tags to spans to values. Useful when tag values are not
-# strongly grouped together in the same span.
-#
-# As with the classic-tag-block, note that the leaf node need not be a
-# string value.
-inverted-tag-block:
-    <tag>:
-        <span>: <value>
-        <span>:
-            - <value>
-            - <value>
-    <tag>:
-        ...
-```
+## Control Files: Formal Definition
+
+`naklo` recognizes three types of control blocks:
+
+1.  A `span-tag-block` has a hierarchy of spans, tags, and values.
+    The most obvious use case is album-wide common tags (using the
+    wildcard span, `*`).
+1.  A `tag-span-block` has a hierarchy of tags, spans, and values.
+1.  A `title-merge-block` builds up titles from span-defined fragments
+    and joins them with spaces. This is not terribly interesting when
+    all works in the block have disjoint tiles, but it greatly reduces
+    repetition in multi-part works, e.g. operas. Note that you're free
+    to indicate a `title` tag (and map values to spans) in a
+    `tag-span-block`. In the "totally disjoint titles" case, these
+    constructs are pretty much congruent.
 
 A *span* is a numerical specification consisting of any of
 
