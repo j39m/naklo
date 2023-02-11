@@ -29,11 +29,13 @@ cdef bool span_is_well_formed(array.array span, int num_songs):
             return False
     return len(span) > 0
 
+
 def parse_span(span_spec, int num_songs):
     parsed = _parse_span(span_spec, num_songs)
     if not span_is_well_formed(parsed, num_songs):
         raise ValueError("bad span: {}".format(span_spec))
     return parsed
+
 
 cdef assert_tag_values_are_strings(list tag_values):
     for value in tag_values:
@@ -41,11 +43,12 @@ cdef assert_tag_values_are_strings(list tag_values):
             raise ValueError(
                 "unexpected non-str detected: ``{}''".format(str(tag_values)))
 
+
 def listify_tag_values(raw_tag_values):
     if (isinstance(raw_tag_values, list)):
         assert_tag_values_are_strings(raw_tag_values)
         return list(raw_tag_values)
     elif (isinstance(raw_tag_values, dict)):
         raise ValueError(
-                "unexpected dict value {}".format(str(raw_tag_values)))
+            "unexpected dict value {}".format(str(raw_tag_values)))
     return [str(raw_tag_values),]

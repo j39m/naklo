@@ -91,8 +91,9 @@ def songs_from(list paths):
 
     return result
 
+
 # Override EasyID3's default handling of the "albumartist" tag, which
 # manifests as the "performer" tag in Quod Libet. This appears to be
 # addressed in mutagen#252.
 mutagen.easyid3.EasyID3.RegisterTXXXKey(
-        "albumartist", "QuodLibet::albumartist")
+    "albumartist", "QuodLibet::albumartist")

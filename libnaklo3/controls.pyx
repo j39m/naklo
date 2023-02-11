@@ -34,7 +34,7 @@ cdef unnest_dictionary(dict nested, int level, callback):
         return
     for (key, value) in nested.items():
         unnest_dictionary(
-                value, level - 1, lambda *args: callback(key, *args))
+            value, level - 1, lambda *args: callback(key, *args))
 
 cdef map_tags(tuple songs, int num_songs, str tag_name, span_spec, value):
     if tag_name not in VALID_TAGS:
@@ -58,7 +58,7 @@ cdef tuple process_classic_tag_block(dict yaml_dictionary, int num_songs):
 
     # The hierarchy is span, tag name, tag value.
     unnest_dictionary(yaml_dictionary, 1,
-            lambda s, t, v: map_tags(result, num_songs, t, s, v))
+                      lambda s, t, v: map_tags(result, num_songs, t, s, v))
     return result
 
 # Has identical return type to process_classic_tag_block() but is cast
@@ -68,7 +68,7 @@ cdef tuple process_inverted_tag_block(dict yaml_dictionary, int num_songs):
 
     # The hierarchy is tag name, span, tag value.
     unnest_dictionary(yaml_dictionary, 1,
-            lambda t, s, v: map_tags(result, num_songs, t, s, v))
+                      lambda t, s, v: map_tags(result, num_songs, t, s, v))
     return result
 
 
@@ -153,4 +153,4 @@ cdef class NakloController:
                         block_name))
             process_cb = block_process_map[block_name]
             self.processed_tag_blocks.append(
-                    process_cb(block, len(self.songs)))
+                process_cb(block, len(self.songs)))

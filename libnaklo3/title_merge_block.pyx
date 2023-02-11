@@ -19,6 +19,7 @@ cdef join_titles(list preprocess):
         result.append(value)
     return tuple(result)
 
+
 def process(dict block, int num_songs):
     """Returns a type appropriate for `NakloController`."""
     preprocess = [list() for _ in range(num_songs)]
