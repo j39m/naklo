@@ -12,9 +12,12 @@ cdef map_prefixes(span_spec, str prefix, list preprocess, int num_songs):
         preprocess[i-1].append(prefix)
 
 cdef join_titles(list preprocess):
-    titles = [{"title": [" ".join(song_titles),]}
-            for song_titles in preprocess]
-    return tuple(titles)
+    result = list()
+    for song_titles in preprocess:
+        joined_title = " ".join(song_titles)
+        value = {"title": [joined_title,]} if joined_title else dict()
+        result.append(value)
+    return tuple(result)
 
 def process(dict block, int num_songs):
     """Returns a type appropriate for `NakloController`."""

@@ -120,6 +120,29 @@ class TestTitleMergeBlock(unittest.TestCase):
             call("tracktotal", "2"),
         ])
 
+    # `title-merge-block` must not add empty titles to songs.
+    def test_mix_with_other_block(self):
+        songs = [MockSong() for _ in range(2)]
+        controller = NakloController(songs)
+        controller.add_tag_blocks(control_dict_for_testing(
+            """
+            # 01 has no title.
+            title-merge-block:
+                02: I have a title, unlike track 1.
+            """
+        ))
+        controller.apply_tags()
+
+        songs[1-1].assert_exact_tags_added([
+            call("tracknumber", "1"),
+            call("tracktotal", "2"),
+        ])
+        songs[2-1].assert_exact_tags_added([
+            call("title", "I have a title, unlike track 1."),
+            call("tracknumber", "2"),
+            call("tracktotal", "2"),
+        ])
+
 # Some of these tests rely on the apparent behavior of yaml.safe_load()
 # observing the underlying YAML insertion order. Python dictionaries are
 # (today) observant of insertion order, but there's no guarantee that
