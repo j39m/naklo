@@ -66,10 +66,10 @@ def check_tag_propagation(tagged_songs):
         if missing_tags:
             result = 1
             print("WARNING: {} lacks {}".format(song.get_path(),
-                    ", ".join(missing_tags)))
+                                                ", ".join(missing_tags)))
 
     return result
-                
+
 
 def dry_run(tagged_songs):
     for song in tagged_songs:
@@ -93,6 +93,7 @@ def main():
         controller.clear()
     controller.enact()
     return 0
+
 
 if __name__ == "__main__":
     sys.exit(main())

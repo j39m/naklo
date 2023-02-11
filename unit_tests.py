@@ -7,6 +7,7 @@ import yaml
 import libnaklo3.controls_util
 from libnaklo3.controls import NakloController
 
+
 def control_dict_for_testing(contents):
     return yaml.safe_load(contents)
 
@@ -20,18 +21,19 @@ class MockSong:
         assert self.add_tag.call_count == len(call_list), \
             "{} != {}".format(self.add_tag.call_count, len(call_list))
 
+
 class TestParseSpan(unittest.TestCase):
     def test_integer_span(self):
         self.assertRaisesRegex(ValueError, "^bad span:.+$",
-            libnaklo3.controls_util.parse_span, "", 1)
+                               libnaklo3.controls_util.parse_span, "", 1)
         self.assertRaisesRegex(ValueError, "^bad span:.+$",
-            libnaklo3.controls_util.parse_span, 2, 1)
+                               libnaklo3.controls_util.parse_span, 2, 1)
         self.assertRaisesRegex(ValueError, "^bad span:.+$",
-            libnaklo3.controls_util.parse_span, "2", 1)
+                               libnaklo3.controls_util.parse_span, "2", 1)
 
     def test_ranged_span(self):
         self.assertRaisesRegex(ValueError, "^bad span:.+$",
-            libnaklo3.controls_util.parse_span, "1-2", 1)
+                               libnaklo3.controls_util.parse_span, "1-2", 1)
         self.assertSequenceEqual(
             libnaklo3.controls_util.parse_span("1-5", 5),
             range(1, 6))
@@ -40,6 +42,7 @@ class TestParseSpan(unittest.TestCase):
         self.assertSequenceEqual(
             libnaklo3.controls_util.parse_span("1 3 5-8 11", 11),
             (1, 3, 5, 6, 7, 8, 11))
+
 
 class TestTitleMergeBlock(unittest.TestCase):
     def test_simple_merge(self):
@@ -147,6 +150,8 @@ class TestTitleMergeBlock(unittest.TestCase):
 # observing the underlying YAML insertion order. Python dictionaries are
 # (today) observant of insertion order, but there's no guarantee that
 # the yaml module is...
+
+
 class TestBasicTagBlockAddition(unittest.TestCase):
     """Chiefly tests NakloController.add_tag_blocks()."""
 
@@ -177,7 +182,7 @@ class TestBasicTagBlockAddition(unittest.TestCase):
         )
         controller = NakloController(list())
         self.assertRaisesRegex(ValueError, "^bad span:.+$",
-            controller.add_tag_blocks, control_data)
+                               controller.add_tag_blocks, control_data)
 
         control_data = control_dict_for_testing(
             """
@@ -188,7 +193,7 @@ class TestBasicTagBlockAddition(unittest.TestCase):
         )
         controller = NakloController(list())
         self.assertRaisesRegex(ValueError, "^bad span:.+$",
-            controller.add_tag_blocks, control_data)
+                               controller.add_tag_blocks, control_data)
 
     def test_invalid_span_exception(self):
         """
@@ -510,6 +515,7 @@ class TestTagApplication(unittest.TestCase):
             call("tracknumber", "2"),
             call("tracktotal", "2"),
         ])
+
 
 if __name__ == "__main__":
     unittest.main()
