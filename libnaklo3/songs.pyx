@@ -47,6 +47,9 @@ cdef class BaseMutagenSong:
             self.mutagen_object[tag_name] = tag_values
         self.mutagen_object.save()
 
+    def items(self):
+        return self.tags.items()
+
 
 class FlacSong(BaseMutagenSong):
 
