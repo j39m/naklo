@@ -2,3 +2,4 @@ build/
 libnaklo3/*.c
 libnaklo3/*.html
 libnaklo3/*.so
+__pycache__

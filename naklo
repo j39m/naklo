@@ -4,8 +4,7 @@ import sys
 import argparse
 import yaml
 
-import libnaklo3.songs
-from libnaklo3.controls import NakloController
+import libnaklo3
 
 
 def get_args():
@@ -87,8 +86,8 @@ def dry_run(tagged_songs):
 def main():
     args = get_args()
 
-    songs = libnaklo3.songs.songs_from(args.songs)
-    controller = NakloController(songs)
+    songs = libnaklo3.songs_from(args.songs)
+    controller = libnaklo3.NakloController(songs)
 
     add_control_files(controller, args)
 
