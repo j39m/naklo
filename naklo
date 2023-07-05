@@ -20,10 +20,17 @@ def get_args():
         "-p", "--preserve-existing", action="store_true",
         help="Preserve existing tags within input files",
     )
-    parser.add_argument(
+
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument(
         "-n", "--dry-run", action="store_true",
         help="Print what would be done, but don't do it",
     )
+    group.add_argument(
+        "-d", "--dot-dry-run", action="store_true",
+        help="Visualize what would be done (in dot), but don't do it",
+    )
+
     parser.add_argument(
         "songs", nargs=argparse.REMAINDER, metavar="<targets ...>"
     )
