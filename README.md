@@ -2,8 +2,12 @@
 
 ... is batch music tagger. You use it by specifying tags for a given
 album in one or more files and applying them in one shot with a naklo
-invocation. Through `mutagen`, naklo supports tagging FLAC, MP3 (to a
-limited extent), and Opus files.
+invocation. Through `mutagen`, naklo supports tagging:
+
+*   FLAC
+*   MP3 (to a limited extent)
+*   Opus
+*   WavPack
 
 > **NOTE**: This project is free software, a personal project by j39m.
 > However, Google LLC owns the copyright on commits
