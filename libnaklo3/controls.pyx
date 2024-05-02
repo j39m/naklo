@@ -134,9 +134,15 @@ cdef class NakloController:
         for song in self.songs:
             song.clear()
 
-    def enact(self):
-        for song in self.songs:
-            song.enact()
+    def enact(self, span):
+        if span is None:
+            for song in self.songs:
+                song.enact()
+            return
+
+        applicable = controls_util.parse_span(span, len(self.songs))
+        for index in applicable:
+            self.songs[index-1].enact()
 
     def add_tag_blocks(self, dict tag_blocks):
         """

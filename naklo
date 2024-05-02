@@ -12,6 +12,9 @@ def get_args():
         description="tags files."
     )
     parser.add_argument(
+            "--only", action="store",
+            help="apply only to these songs")
+    parser.add_argument(
         "-c", "--control-file", action="append",
         help="File of YAML-formatted control blocks",
     )
@@ -97,7 +100,7 @@ def main():
 
     if not args.preserve_existing:
         controller.clear()
-    controller.enact()
+    controller.enact(args.only)
     return 0
 
 
