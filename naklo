@@ -12,8 +12,8 @@ def get_args():
         description="tags files."
     )
     parser.add_argument(
-            "--only", action="store",
-            help="apply only to these songs")
+        "--only", action="store",
+        help="apply only to these songs")
     parser.add_argument(
         "-c", "--control-file", action="append",
         help="File of YAML-formatted control blocks",
@@ -74,8 +74,8 @@ def check_tag_propagation(tagged_songs):
         missing_tags.sort()
         if missing_tags:
             result = 1
-            print("WARNING: {} lacks {}".format(song.get_path(),
-                                                ", ".join(missing_tags)))
+            sys.stderr.write(f"Warning: `{song.get_path()}` lacks {
+                             ', '.join(missing_tags)}\n")
 
     return result
 
