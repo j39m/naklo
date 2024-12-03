@@ -10,23 +10,44 @@ cdef class BaseMutagenSong:
     cdef str path
     cdef dict tags
     cdef object mutagen_object
+    __tag_sort_dict = {
+        "artist": "00",
+        "performer": "01",
+        "conductor": "02",
+        "composer": "03",
+    }
 
     def __init__(self, str path, object mutagen_class):
         self.path = path
         self.tags = dict()
-        self.mutagen_object = mutagen_class(path)
+        mutagen_object = mutagen_class(path)
+
+    @classmethod
+    def __tag_sorting_key(self, tag_name):
+        return self.__tag_sort_dict.get(tag_name, tag_name)
+
+    def __sorted_keys(self):
+        return sorted(self.tags.keys(), key=self.__tag_sorting_key)
 
     def __str__(self):
-        result = list()
-        result.append(self.path)
-        for (tag_name, tag_values) in self.tags.items():
+        result = []
+        result.append(f"{self.path}: “{self.__get_title()}”")
+        for tag_name in self.__sorted_keys():
+            tag_values = self.tags[tag_name]
+            if tag_name == "title":
+                continue
             if len(tag_values) == 1:
-                result.append("  {}: {}".format(tag_name, tag_values[0]))
+                result.append(f"    {tag_name}: {tag_values[0]}")
             else:
-                result.append("  {}:\n    {}".format(
-                    tag_name, "\n    ".join(tag_values)
-                ))
+                result.append(f"    {tag_name}:")
+                result.extend([f"        {val}" for val in tag_values])
         return "\n".join(result)
+
+    def __get_title(self):
+        try:
+            return self.tags["title"][0]
+        except KeyError:
+            return "NO TITLE"
 
     def get_tag_keys(self):
         return self.tags.keys()
