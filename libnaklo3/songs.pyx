@@ -20,7 +20,7 @@ cdef class BaseMutagenSong:
     def __init__(self, str path, object mutagen_class):
         self.path = path
         self.tags = dict()
-        mutagen_object = mutagen_class(path)
+        self.mutagen_object = mutagen_class(path)
 
     @classmethod
     def __tag_sorting_key(self, tag_name):
