@@ -3,6 +3,7 @@ import mutagen
 import mutagen.easyid3
 import mutagen.flac
 import mutagen.oggopus
+import mutagen.oggvorbis
 import mutagen.wavpack
 
 cdef class BaseMutagenSong:
@@ -104,6 +105,12 @@ class WavPackSong(BaseMutagenSong):
         super().__init__(path, mutagen.wavpack.WavPack)
 
 
+class VorbisSong(BaseMutagenSong):
+
+    def __init__(self, path):
+        super().__init__(path, mutagen.oggvorbis.OggVorbis)
+
+
 cdef song_from(str path):
     if path.endswith(".flac"):
         return FlacSong(path)
@@ -113,6 +120,8 @@ cdef song_from(str path):
         return OpusSong(path)
     elif path.endswith(".wv"):
         return WavPackSong(path)
+    elif path.endswith(".ogg"):
+        return VorbisSong(path)
     raise RuntimeError("no handler for ``{}''".format(path))
 
 
