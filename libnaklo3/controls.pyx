@@ -18,6 +18,8 @@ cdef set VALID_TAGS = set((
     "lyricist",
     "performer",
     "title",
+    "tracknumber",
+    "tracktotal",
     "recording_mbid",
     "release_mbid",
 ))
@@ -96,8 +98,10 @@ cdef apply_template(tuple template, list songs):
 # Mutates |songs|.
 cdef apply_track_numbers(list songs):
     for (index, song) in enumerate(songs):
-        song.add_tag("tracknumber", str(index + 1))
-        song.add_tag("tracktotal", str(len(songs)))
+        if "tracknumber" not in song.get_tag_keys():
+            song.add_tag("tracknumber", str(index + 1))
+        if "tracktotal" not in song.get_tag_keys():
+            song.add_tag("tracktotal", str(len(songs)))
 
 cdef dict block_process_map = {
     "classic-tag-block": process_classic_tag_block,
