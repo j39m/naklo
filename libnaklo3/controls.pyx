@@ -18,6 +18,8 @@ cdef set VALID_TAGS = set((
     "lyricist",
     "performer",
     "title",
+    "recording_mbid",
+    "release_mbid",
 ))
 
 cdef unnest_dictionary(dict nested, int level, callback):
