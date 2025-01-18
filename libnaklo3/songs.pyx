@@ -1,4 +1,9 @@
 from cpython cimport bool
+
+import logging
+logger = logging.getLogger(__name__)
+import re
+
 import mutagen
 import mutagen.easyid3
 import mutagen.flac
@@ -17,6 +22,7 @@ cdef class BaseMutagenSong:
         "conductor": "02",
         "composer": "03",
     }
+    warnworthy_matcher = re.compile('(["\']| - )')
 
     def __init__(self, str path, object mutagen_class):
         self.path = path
@@ -57,6 +63,11 @@ cdef class BaseMutagenSong:
         return self.path
 
     def add_tag(self, str tag, str value):
+        matched = self.warnworthy_matcher.search(value)
+        if matched:
+            logger.warning("concerning character found")
+            logger.warning(f'    {value}')
+            logger.warning(f'{" " * (matched.start() + 4)}^ here')
         try:
             self.tags[tag].append(value)
         except KeyError:

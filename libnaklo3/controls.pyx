@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import libnaklo3.controls_util as controls_util
 import libnaklo3.title_merge_block as title_merge_block
 
@@ -157,9 +160,8 @@ cdef class NakloController:
         """
         for (block_name, block) in tag_blocks.items():
             if block_name not in block_process_map:
-                raise ValueError(
-                    "unrecognized block name: ``{}''".format(
-                        block_name))
+                logger.warning(f"skipping unknown block named ``{block_name}''")
+                continue
             process_cb = block_process_map[block_name]
             self.processed_tag_blocks.append(
                 process_cb(block, len(self.songs)))
