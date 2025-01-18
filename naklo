@@ -94,9 +94,11 @@ def check_tag_propagation(tagged_songs):
 
 
 def dry_run(tagged_songs):
+    # Emit tag propagation warnings before the main wall of text.
+    ret = check_tag_propagation(tagged_songs)
     for song in tagged_songs:
         logger.info(song)
-    return check_tag_propagation(tagged_songs)
+    return ret
 
 
 def main():
