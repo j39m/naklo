@@ -5,7 +5,7 @@ import logging
 
 logging.basicConfig(stream=sys.stdout,
                     level=logging.INFO,
-                    format='naklo.%(name)s: %(message)s')
+                    format='naklo.%(name)s %(levelname)s: %(message)s')
 logger = logging.getLogger(__name__)
 
 import argparse
@@ -89,7 +89,7 @@ def check_tag_propagation(tagged_songs):
         if missing_tags:
             result = 1
             logger.warning(
-                f"Warning: `{song.get_path()}` lacks {', '.join(missing_tags)}"
+                f"`{song.get_path()}` lacks {', '.join(missing_tags)}"
             )
 
     return result
