@@ -9,7 +9,8 @@ invocation. Through `mutagen`, naklo supports tagging:
 *   Opus
 *   WavPack
 
-> **NOTE**: This project is free software, a personal project by j39m.
+> [!NOTE]
+> This project is free software, a personal project by j39m.
 > However, Google LLC owns the copyright on commits
 > `d7144ae933c48733abf818308e8153786b4d23a6` and newer. This does not
 > impact your ability to use and to hack at this free software; I
