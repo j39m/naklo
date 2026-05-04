@@ -159,6 +159,8 @@ cdef class NakloController:
         2.  an inverted tag block.
         """
         for (block_name, block) in tag_blocks.items():
+            if block_name == "naklo-ignore-block":
+                continue
             if block_name not in block_process_map:
                 logger.warning(f"skipping unknown block named ``{block_name}''")
                 continue
