@@ -95,9 +95,20 @@ def check_tag_propagation(tagged_songs):
     return result
 
 
+def check_quote_balance(tagged_songs):
+    unbalanced_titles = 0
+    for song in tagged_songs:
+        title = song.get_title()
+        if title.count("“") - title.count("”") or title.count("«") - title.count("»"):
+            logger.warning(f"Unbalanced title “{title}”")
+            unbalanced_titles += 1
+    return unbalanced_titles
+
+
 def dry_run(tagged_songs):
     # Emit tag propagation warnings before the main wall of text.
     ret = check_tag_propagation(tagged_songs)
+    ret += check_quote_balance(tagged_songs)
     for song in tagged_songs:
         logger.info(song)
     return ret

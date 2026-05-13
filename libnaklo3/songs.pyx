@@ -38,7 +38,7 @@ cdef class BaseMutagenSong:
 
     def __str__(self):
         result = []
-        result.append(f"{self.path}: “{self.__get_title()}”")
+        result.append(f"{self.path}: “{self.get_title()}”")
         for tag_name in self.__sorted_keys():
             tag_values = self.tags[tag_name]
             if tag_name == "title":
@@ -50,7 +50,7 @@ cdef class BaseMutagenSong:
                 result.extend([f"        {val}" for val in tag_values])
         return "\n".join(result)
 
-    def __get_title(self):
+    def get_title(self):
         try:
             return self.tags["title"][0]
         except KeyError:
