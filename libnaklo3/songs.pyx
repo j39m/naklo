@@ -11,6 +11,16 @@ import mutagen.oggopus
 import mutagen.oggvorbis
 import mutagen.wavpack
 
+HOMOGENEOUS_TAGS = [
+    "album",
+    "albumartist",
+    "discnumber",
+    "disctotal",
+    "discsubtitle",
+    "genre",
+    "tracktotal",
+]
+
 cdef class BaseMutagenSong:
 
     cdef str path
@@ -40,9 +50,9 @@ cdef class BaseMutagenSong:
         result = []
         result.append(f"{self.path}: “{self.get_title()}”")
         for tag_name in self.__sorted_keys():
-            tag_values = self.tags[tag_name]
-            if tag_name == "title":
+            if tag_name in ("title", "tracknumber") or tag_name in HOMOGENEOUS_TAGS:
                 continue
+            tag_values = self.tags[tag_name]
             if len(tag_values) == 1:
                 result.append(f"    {tag_name}: {tag_values[0]}")
             else:
@@ -83,6 +93,9 @@ cdef class BaseMutagenSong:
 
     def items(self):
         return self.tags.items()
+
+    def get(self, key):
+        return self.tags.get(key, [])
 
 
 class FlacSong(BaseMutagenSong):

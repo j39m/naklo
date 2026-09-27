@@ -11,6 +11,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 import argparse
+import pprint
 import yaml
 
 import libnaklo3
@@ -99,10 +100,26 @@ def check_quote_balance(tagged_songs):
     return unbalanced_titles
 
 
+def log_homogeneous_tags(tagged_songs):
+    ret = 0
+    homogeneous = {}
+    for tag in libnaklo3.songs.HOMOGENEOUS_TAGS:
+        unique_values = {tuple(song.get(tag)) for song in tagged_songs}
+        if len(unique_values) != 1:
+            logger.warning(warning_format.format(f"“{tag}” is not homogeneous!"))
+            ret += 1
+        value = "／".join(unique_values.pop())
+        if value:
+            homogeneous[tag] = value
+    logger.info(f"Homogeneous tags:\n{pprint.pformat(homogeneous)}")
+    return ret
+
+
 def dry_run(tagged_songs):
     # Emit tag propagation warnings before the main wall of text.
     ret = check_tag_propagation(tagged_songs)
     ret += check_quote_balance(tagged_songs)
+    ret += log_homogeneous_tags(tagged_songs)
     for song in tagged_songs:
         logger.info(song)
     return ret
