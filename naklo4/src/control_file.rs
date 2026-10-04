@@ -15,6 +15,37 @@ fn validate_range(
     Some(range)
 }
 
+fn parse_span_token(token: &str, total_tracks: usize) -> Option<RangeInclusive<usize>> {
+    if token == "*" {
+        return Some(RangeInclusive { start: 1, last: total_tracks });
+    }
+    if let Ok(single) = usize::from_str_radix(token, 10) {
+        return validate_range(
+            RangeInclusive {
+                start: single,
+                last: single,
+            },
+            total_tracks,
+        );
+    }
+    if let Ok(split) = token
+        .split('-')
+        .map(|num| usize::from_str_radix(num, 10))
+        .collect::<Result<Vec<_>, std::num::ParseIntError>>()
+    {
+        if split.len() == 2 {
+            return validate_range(
+                RangeInclusive {
+                    start: split[0],
+                    last: split[1],
+                },
+                total_tracks,
+            );
+        }
+    }
+    None
+}
+
 fn parse_span(span: &Span, total_tracks: usize) -> Option<Vec<usize>> {
     match span {
         Span::SingleTrack(index) => Some(
@@ -28,7 +59,16 @@ fn parse_span(span: &Span, total_tracks: usize) -> Option<Vec<usize>> {
             .into_iter()
             .collect(),
         ),
-        Span::GeneralSpan(complicated) => None,
+        Span::GeneralSpan(complicated) => {
+            if let Some(ranges) = complicated
+                .split_whitespace()
+                .map(|token| parse_span_token(token, total_tracks))
+                .collect::<Option<Vec<RangeInclusive<usize>>>>()
+            {
+                return Some(ranges.into_iter().flatten().collect());
+            }
+            None
+        }
     }
 }
 
@@ -38,8 +78,8 @@ mod tests {
 
     #[test]
     fn test_obvious_bad_cases() {
-        assert_eq!(parse_span(&Span::GeneralSpan(String::from("")), 1), None);
-        assert_eq!(parse_span(&Span::GeneralSpan(String::from(" ")), 1), None);
+        assert_eq!(parse_span(&Span::GeneralSpan(String::from("hee")), 1), None);
+        assert_eq!(parse_span(&Span::GeneralSpan(String::from("hee hee")), 1), None);
 
         assert_eq!(parse_span(&Span::SingleTrack(0), 1), None);
         assert_eq!(parse_span(&Span::SingleTrack(999), 1), None);
@@ -67,6 +107,10 @@ mod tests {
         assert_eq!(
             parse_span(&Span::GeneralSpan(String::from("1-4 8 10")), 10),
             Some(vec![1usize, 2, 3, 4, 8, 10])
+        );
+        assert_eq!(
+            parse_span(&Span::GeneralSpan(String::from("1-3 5 7-9")), 10),
+            Some(vec![1usize, 2, 3, 5, 7, 8, 9])
         );
     }
 
