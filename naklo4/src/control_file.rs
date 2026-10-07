@@ -1,6 +1,7 @@
 use indexmap::IndexMap;
 use serde::Deserialize;
 use std::range::RangeInclusive;
+use thiserror::Error;
 
 type SpanType = String;
 type TagType = String;
@@ -27,20 +28,33 @@ struct ControlFile {
     tag_span_block: Option<IndexMap<TagType, IndexMap<SpanType, ValueType>>>,
 }
 
+#[derive(Error, Debug, PartialEq)]
+pub enum ControlError {
+    #[error("out of range: “{0}”")]
+    SpanOutOfRange(usize),
+    #[error("bad span: “{0}”")]
+    BadSpan(String),
+}
+
 fn validate_range(
     range: RangeInclusive<usize>,
     total_tracks: usize,
-) -> Option<RangeInclusive<usize>> {
-    if range.start < 1usize || range.last > total_tracks {
-        return None;
+) -> Result<RangeInclusive<usize>, ControlError> {
+    if range.start < 1usize {
+        return Err(ControlError::SpanOutOfRange(range.start));
+    } else if range.last > total_tracks {
+        return Err(ControlError::SpanOutOfRange(range.last));
     }
 
-    Some(range)
+    Ok(range)
 }
 
-fn parse_span_token(token: &str, total_tracks: usize) -> Option<RangeInclusive<usize>> {
+fn parse_span_token(
+    token: &str,
+    total_tracks: usize,
+) -> Result<RangeInclusive<usize>, ControlError> {
     if token == "*" {
-        return Some(RangeInclusive {
+        return Ok(RangeInclusive {
             start: 1,
             last: total_tracks,
         });
@@ -69,62 +83,60 @@ fn parse_span_token(token: &str, total_tracks: usize) -> Option<RangeInclusive<u
             );
         }
     }
-    None
+    Err(ControlError::BadSpan(token.to_string()))
 }
 
-fn parse_span(span: &str, total_tracks: usize) -> Option<Vec<usize>> {
-    if let Some(ranges) = span
+fn parse_span(span: &str, total_tracks: usize) -> Result<Vec<usize>, ControlError> {
+    match span
         .split_whitespace()
         .map(|token| parse_span_token(token, total_tracks))
-        .collect::<Option<Vec<RangeInclusive<usize>>>>()
+        .collect::<Result<Vec<RangeInclusive<usize>>, _>>()
     {
-        return Some(ranges.into_iter().flatten().collect());
+        Ok(ranges) => Ok(ranges.into_iter().flatten().collect()),
+        Err(error) => Err(error),
     }
-    None
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::assert_matches;
 
     #[test]
-    fn test_obvious_bad_cases() {
-        assert_eq!(parse_span("hee", 1), None);
-        assert_eq!(parse_span("hee hee", 1), None);
+    fn test_obvious_bad_spans() {
+        assert_matches!(parse_span("hee", 1), Err(ControlError::BadSpan(_)));
+        assert_matches!(parse_span("hee hee", 1), Err(ControlError::BadSpan(_)));
 
-        assert_eq!(parse_span("0", 1), None);
-        assert_eq!(parse_span("999", 1), None);
+        assert_matches!(parse_span("0", 1), Err(ControlError::SpanOutOfRange(_)));
+        assert_matches!(parse_span("999", 1), Err(ControlError::SpanOutOfRange(_)));
     }
 
     #[test]
-    fn test_single_tracks() {
-        assert_eq!(parse_span("1", 1), Some(vec![1usize,]));
+    fn test_single_track_span() {
+        assert_eq!(parse_span("1", 1), Ok(vec![1usize,]));
     }
 
     #[test]
-    fn test_multiple_tracks() {
-        assert_eq!(parse_span("1 2 4", 4), Some(vec![1usize, 2, 4]));
-        assert_eq!(parse_span("1-4", 4), Some(vec![1usize, 2, 3, 4]));
-        assert_eq!(
-            parse_span("1-4 8 10", 10),
-            Some(vec![1usize, 2, 3, 4, 8, 10])
-        );
+    fn test_multiple_track_span() {
+        assert_eq!(parse_span("1 2 4", 4), Ok(vec![1usize, 2, 4]));
+        assert_eq!(parse_span("1-4", 4), Ok(vec![1usize, 2, 3, 4]));
+        assert_eq!(parse_span("1-4 8 10", 10), Ok(vec![1usize, 2, 3, 4, 8, 10]));
         assert_eq!(
             parse_span("1-3 5 7-9", 10),
-            Some(vec![1usize, 2, 3, 5, 7, 8, 9])
+            Ok(vec![1usize, 2, 3, 5, 7, 8, 9])
         );
     }
 
     #[test]
-    fn test_poking_out_of_bounds() {
-        assert_eq!(parse_span("1-4 6", 5), None);
+    fn test_span_poking_out_of_bounds() {
+        assert_matches!(parse_span("1-4 6", 5), Err(ControlError::SpanOutOfRange(_)));
     }
 
     #[test]
     fn test_wildcard_span() {
         assert_eq!(
             parse_span("*", 99),
-            Some(RangeInclusive::from(1usize..=99).into_iter().collect())
+            Ok(RangeInclusive::from(1usize..=99).into_iter().collect())
         );
     }
 

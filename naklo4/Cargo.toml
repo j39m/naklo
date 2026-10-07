@@ -8,3 +8,4 @@ indexmap = { version = "2", features = ["serde"] }
 pyo3 = "0"
 serde = { version = "1", features = ["derive"] }
 serde-saphyr = { version = "1", default-features = false, features = ["deserialize"] }
+thiserror = "2"
