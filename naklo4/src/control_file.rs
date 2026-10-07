@@ -27,11 +27,6 @@ struct ControlFile {
     tag_span_block: Option<IndexMap<TagType, IndexMap<SpanType, ValueType>>>,
 }
 
-enum Span {
-    SingleTrack(usize),
-    GeneralSpan(String),
-}
-
 fn validate_range(
     range: RangeInclusive<usize>,
     total_tracks: usize,
@@ -77,30 +72,15 @@ fn parse_span_token(token: &str, total_tracks: usize) -> Option<RangeInclusive<u
     None
 }
 
-fn parse_span(span: &Span, total_tracks: usize) -> Option<Vec<usize>> {
-    match span {
-        Span::SingleTrack(index) => Some(
-            validate_range(
-                RangeInclusive {
-                    start: *index,
-                    last: *index,
-                },
-                total_tracks,
-            )?
-            .into_iter()
-            .collect(),
-        ),
-        Span::GeneralSpan(complicated) => {
-            if let Some(ranges) = complicated
-                .split_whitespace()
-                .map(|token| parse_span_token(token, total_tracks))
-                .collect::<Option<Vec<RangeInclusive<usize>>>>()
-            {
-                return Some(ranges.into_iter().flatten().collect());
-            }
-            None
-        }
+fn parse_span(span: &str, total_tracks: usize) -> Option<Vec<usize>> {
+    if let Some(ranges) = span
+        .split_whitespace()
+        .map(|token| parse_span_token(token, total_tracks))
+        .collect::<Option<Vec<RangeInclusive<usize>>>>()
+    {
+        return Some(ranges.into_iter().flatten().collect());
     }
+    None
 }
 
 #[cfg(test)]
@@ -109,57 +89,41 @@ mod tests {
 
     #[test]
     fn test_obvious_bad_cases() {
-        assert_eq!(parse_span(&Span::GeneralSpan(String::from("hee")), 1), None);
-        assert_eq!(
-            parse_span(&Span::GeneralSpan(String::from("hee hee")), 1),
-            None
-        );
+        assert_eq!(parse_span("hee", 1), None);
+        assert_eq!(parse_span("hee hee", 1), None);
 
-        assert_eq!(parse_span(&Span::SingleTrack(0), 1), None);
-        assert_eq!(parse_span(&Span::SingleTrack(999), 1), None);
+        assert_eq!(parse_span("0", 1), None);
+        assert_eq!(parse_span("999", 1), None);
     }
 
     #[test]
     fn test_single_tracks() {
-        assert_eq!(parse_span(&Span::SingleTrack(1), 1), Some(vec![1usize,]));
-        assert_eq!(
-            parse_span(&Span::GeneralSpan(String::from("1")), 1),
-            Some(vec![1usize,])
-        );
+        assert_eq!(parse_span("1", 1), Some(vec![1usize,]));
     }
 
     #[test]
     fn test_multiple_tracks() {
+        assert_eq!(parse_span("1 2 4", 4), Some(vec![1usize, 2, 4]));
+        assert_eq!(parse_span("1-4", 4), Some(vec![1usize, 2, 3, 4]));
         assert_eq!(
-            parse_span(&Span::GeneralSpan(String::from("1 2 4")), 4),
-            Some(vec![1usize, 2, 4])
-        );
-        assert_eq!(
-            parse_span(&Span::GeneralSpan(String::from("1-4")), 4),
-            Some(vec![1usize, 2, 3, 4])
-        );
-        assert_eq!(
-            parse_span(&Span::GeneralSpan(String::from("1-4 8 10")), 10),
+            parse_span("1-4 8 10", 10),
             Some(vec![1usize, 2, 3, 4, 8, 10])
         );
         assert_eq!(
-            parse_span(&Span::GeneralSpan(String::from("1-3 5 7-9")), 10),
+            parse_span("1-3 5 7-9", 10),
             Some(vec![1usize, 2, 3, 5, 7, 8, 9])
         );
     }
 
     #[test]
     fn test_poking_out_of_bounds() {
-        assert_eq!(
-            parse_span(&Span::GeneralSpan(String::from("1-4 6")), 5),
-            None
-        );
+        assert_eq!(parse_span("1-4 6", 5), None);
     }
 
     #[test]
     fn test_wildcard_span() {
         assert_eq!(
-            parse_span(&Span::GeneralSpan(String::from("*")), 99),
+            parse_span("*", 99),
             Some(RangeInclusive::from(1usize..=99).into_iter().collect())
         );
     }
