@@ -3,22 +3,10 @@ use serde::Deserialize;
 use std::range::RangeInclusive;
 use thiserror::Error;
 
+use crate::value::ValueType;
+
 type SpanType = String;
 type TagType = String;
-
-// The `#[serde(untagged)]` is load-bearing here. Without this, serde
-// would expect the variant names directly in the YAML. Something like:
-//
-// ```
-// album:
-//   Single: Hello there!
-// ```
-#[derive(Debug, PartialEq, Deserialize)]
-#[serde(untagged)]
-enum ValueType {
-    Single(String),
-    Multiple(Vec<String>),
-}
 
 #[derive(Debug, PartialEq, Deserialize)]
 struct ControlFile {
