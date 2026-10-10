@@ -7,13 +7,15 @@ use crate::value::ValueType;
 
 type SpanType = String;
 type TagType = String;
+type SpanTagBlock = IndexMap<SpanType, IndexMap<TagType, ValueType>>;
+type TagSpanBlock = IndexMap<TagType, IndexMap<SpanType, ValueType>>;
 
 #[derive(Debug, PartialEq, Deserialize)]
 struct ControlFile {
     #[serde(rename = "span-tag-block")]
-    span_tag_block: Option<IndexMap<SpanType, IndexMap<TagType, ValueType>>>,
+    span_tag_block: Option<SpanTagBlock>,
     #[serde(rename = "tag-span-block")]
-    tag_span_block: Option<IndexMap<TagType, IndexMap<SpanType, ValueType>>>,
+    tag_span_block: Option<TagSpanBlock>,
 }
 
 #[derive(Error, Debug, PartialEq)]
@@ -24,10 +26,12 @@ pub enum ControlError {
     BadSpan(String),
 }
 
+type ControlResult<T> = Result<T, ControlError>;
+
 fn validate_range(
     range: RangeInclusive<usize>,
     total_tracks: usize,
-) -> Result<RangeInclusive<usize>, ControlError> {
+) -> ControlResult<RangeInclusive<usize>> {
     if range.start < 1usize {
         return Err(ControlError::SpanOutOfRange(range.start));
     } else if range.last > total_tracks {
@@ -37,10 +41,7 @@ fn validate_range(
     Ok(range)
 }
 
-fn parse_span_token(
-    token: &str,
-    total_tracks: usize,
-) -> Result<RangeInclusive<usize>, ControlError> {
+fn parse_span_token(token: &str, total_tracks: usize) -> ControlResult<RangeInclusive<usize>> {
     if token == "*" {
         return Ok(RangeInclusive {
             start: 1,
@@ -74,7 +75,7 @@ fn parse_span_token(
     Err(ControlError::BadSpan(token.to_string()))
 }
 
-fn parse_span(span: &str, total_tracks: usize) -> Result<Vec<usize>, ControlError> {
+fn parse_span(span: &str, total_tracks: usize) -> ControlResult<Vec<usize>> {
     match span
         .split_whitespace()
         .map(|token| parse_span_token(token, total_tracks))
