@@ -19,6 +19,5 @@ pub enum ValueType {
 }
 
 pub trait AddTag {
-    fn add(&self, tag: &str, val: &ValueType) {
-    }
+    fn add(&self, tag: &str, val: &ValueType);
 }
