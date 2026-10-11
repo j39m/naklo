@@ -21,12 +21,18 @@ struct SpanTagBlock(IndexMap<SpanType, IndexMap<TagType, ValueType>>);
 #[derive(Debug, PartialEq, Deserialize)]
 struct TagSpanBlock(IndexMap<TagType, IndexMap<SpanType, ValueType>>);
 
+// `title-merge-block` has single-valued leaves.
+#[derive(Debug, PartialEq, Deserialize)]
+struct TitleMergeBlock(IndexMap<SpanType, String>);
+
 #[derive(Debug, PartialEq, Deserialize)]
 struct ControlFile {
     #[serde(rename = "span-tag-block")]
     span_tag_block: Option<SpanTagBlock>,
     #[serde(rename = "tag-span-block")]
     tag_span_block: Option<TagSpanBlock>,
+    #[serde(rename = "title-merge-block")]
+    title_merge_block: Option<TitleMergeBlock>,
 }
 
 #[derive(Error, Debug, PartialEq)]
@@ -129,7 +135,7 @@ fn parse_span(span: &str, total_tracks: usize) -> ControlResult<Vec<usize>> {
     }
 }
 
-trait MapsToSongs {
+pub trait MapsToSongs {
     fn map_to<T: AddTag>(&self, songs: &mut Vec<T>) -> ControlResult<()>;
 }
 
@@ -158,6 +164,38 @@ impl MapsToSongs for TagSpanBlock {
                     songs[index - 1].add(tag, val);
                 }
             }
+        }
+        Ok(())
+    }
+}
+
+impl MapsToSongs for TitleMergeBlock {
+    fn map_to<T: AddTag>(&self, songs: &mut Vec<T>) -> ControlResult<()> {
+        let mut joined: Vec<Vec<String>> = vec![vec![]; songs.len()];
+        for (span_token, title_fragment) in self.0.iter() {
+            parse_span(span_token, songs.len())?
+                .iter()
+                .for_each(|index| joined[index - 1].push(title_fragment.clone()));
+        }
+        std::iter::zip(songs, joined).for_each(|(song, fragments)| {
+            if !fragments.is_empty() {
+                song.add("title", &ValueType::Single(fragments.join(" ")));
+            }
+        });
+        Ok(())
+    }
+}
+
+impl MapsToSongs for ControlFile {
+    fn map_to<T: AddTag>(&self, songs: &mut Vec<T>) -> ControlResult<()> {
+        if let Some(ref block) = self.span_tag_block {
+            block.map_to(songs)?;
+        }
+        if let Some(ref block) = self.tag_span_block {
+            block.map_to(songs)?;
+        }
+        if let Some(ref block) = self.title_merge_block {
+            block.map_to(songs)?;
         }
         Ok(())
     }
@@ -225,6 +263,7 @@ mod tests {
                     },
                 })),
                 tag_span_block: None,
+                title_merge_block: None,
             }
         );
 
@@ -248,6 +287,7 @@ mod tests {
                     },
                 })),
                 tag_span_block: None,
+                title_merge_block: None,
             }
         );
     }
@@ -271,6 +311,7 @@ mod tests {
                         "02-05".to_string() => ValueType::Single("Clanker Corps 48".to_string()),
                     },
                 })),
+                title_merge_block: None,
             }
         );
     }
@@ -385,6 +426,72 @@ mod tests {
         assert_matches!(
             block.map_to(&mut songs),
             Err(ControlError::SpanOutOfRange(_))
+        );
+    }
+
+    #[test]
+    fn test_title_merge_block_map_to() {
+        let yaml = r#"
+        "01 02": hello
+        "02-04": and
+        05: goobai
+        "#;
+        let block: TitleMergeBlock = serde_saphyr::from_str(yaml).unwrap();
+        let mut songs = vec![SongTagValueStore::new(); 5];
+        block.map_to(&mut songs).unwrap();
+        assert_eq!(
+            songs,
+            vec![
+                SongTagValueStore::from([("title".to_string(), vec!["hello".to_string(),])]),
+                SongTagValueStore::from([("title".to_string(), vec!["hello and".to_string(),])]),
+                SongTagValueStore::from([("title".to_string(), vec!["and".to_string(),])]),
+                SongTagValueStore::from([("title".to_string(), vec!["and".to_string(),])]),
+                SongTagValueStore::from([("title".to_string(), vec!["goobai".to_string(),])]),
+            ]
+        );
+    }
+
+    #[test]
+    fn test_title_merge_block_oob() {
+        let yaml = r#"
+        "01 02": hello
+        "02-04": and
+        05: goobai
+        "#;
+        let block: TitleMergeBlock = serde_saphyr::from_str(yaml).unwrap();
+        let mut songs = vec![SongTagValueStore::new(); 4];
+        assert_matches!(
+            block.map_to(&mut songs),
+            Err(ControlError::SpanOutOfRange(_))
+        );
+    }
+
+    #[test]
+    fn test_title_stacking() {
+        let yaml = r#"
+        title-merge-block:
+            "*": hello
+            "03": and
+        # serde_saphyr parses this before the above block, regardless
+        # of its position here.
+        tag-span-block:
+            title:
+                03: waku waku
+        "#;
+        let control: ControlFile = serde_saphyr::from_str(yaml).unwrap();
+        let mut songs = vec![SongTagValueStore::new(); 3];
+        control.map_to(&mut songs).unwrap();
+        assert_eq!(
+            songs,
+            vec![
+                SongTagValueStore::from([("title".to_string(), vec!["hello".to_string(),])]),
+                SongTagValueStore::from([("title".to_string(), vec!["hello".to_string(),])]),
+                SongTagValueStore::from([(
+                    "title".to_string(),
+                    // separate values
+                    vec!["waku waku".to_string(), "hello and".to_string()]
+                )]),
+            ]
         );
     }
 }
