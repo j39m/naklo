@@ -11,8 +11,15 @@ use crate::value::ValueType;
 
 type SpanType = String;
 type TagType = String;
-type SpanTagBlock = IndexMap<SpanType, IndexMap<TagType, ValueType>>;
-type TagSpanBlock = IndexMap<TagType, IndexMap<SpanType, ValueType>>;
+
+// Use the New Type idiom to prevent the underlying IndexMaps from
+// being literally the same types. If they were literal synonyms, Rust
+// would forbid distinct implementations of `MapsToSongs`.
+#[derive(Debug, PartialEq, Deserialize)]
+struct SpanTagBlock(IndexMap<SpanType, IndexMap<TagType, ValueType>>);
+
+#[derive(Debug, PartialEq, Deserialize)]
+struct TagSpanBlock(IndexMap<TagType, IndexMap<SpanType, ValueType>>);
 
 #[derive(Debug, PartialEq, Deserialize)]
 struct ControlFile {
@@ -128,10 +135,25 @@ trait MapsToSongs {
 
 impl MapsToSongs for SpanTagBlock {
     fn map_to<T: AddTag>(&self, songs: &mut Vec<T>) -> ControlResult<()> {
-        for (span_token, tags_and_values) in self.iter() {
+        for (span_token, tags_and_values) in self.0.iter() {
             let span = parse_span(span_token.as_str(), songs.len())?;
             for (tag, val) in tags_and_values.iter() {
                 tag_is_valid(tag)?;
+                for index in span.iter() {
+                    songs[index - 1].add(tag, val);
+                }
+            }
+        }
+        Ok(())
+    }
+}
+
+impl MapsToSongs for TagSpanBlock {
+    fn map_to<T: AddTag>(&self, songs: &mut Vec<T>) -> ControlResult<()> {
+        for (tag, spans_and_values) in self.0.iter() {
+            tag_is_valid(tag)?;
+            for (span_token, val) in spans_and_values.iter() {
+                let span = parse_span(span_token.as_str(), songs.len())?;
                 for index in span.iter() {
                     songs[index - 1].add(tag, val);
                 }
@@ -197,11 +219,11 @@ mod tests {
         assert_eq!(
             control1,
             ControlFile {
-                span_tag_block: Some(indexmap! {
+                span_tag_block: Some(SpanTagBlock(indexmap! {
                     "*".to_string() => indexmap!{
                         "album".to_string() => ValueType::Single("Hello there!".to_string()),
                     },
-                }),
+                })),
                 tag_span_block: None,
             }
         );
@@ -217,14 +239,14 @@ mod tests {
         assert_eq!(
             control2,
             ControlFile {
-                span_tag_block: Some(indexmap! {
+                span_tag_block: Some(SpanTagBlock(indexmap! {
                     "*".to_string() => indexmap!{
                         "album".to_string() =>
                             ValueType::Multiple(
                                 vec!["General".to_string(), "Kenobi".to_string()]
                             ),
                     },
-                }),
+                })),
                 tag_span_block: None,
             }
         );
@@ -243,12 +265,12 @@ mod tests {
             control1,
             ControlFile {
                 span_tag_block: None,
-                tag_span_block: Some(indexmap! {
+                tag_span_block: Some(TagSpanBlock(indexmap! {
                     "artist".to_string() => indexmap!{
                         "01".to_string() => ValueType::Single("General Grievous".to_string()),
                         "02-05".to_string() => ValueType::Single("Clanker Corps 48".to_string()),
                     },
-                }),
+                })),
             }
         );
     }
@@ -305,6 +327,60 @@ mod tests {
             arranger: Bill Yell
         "#;
         let block: SpanTagBlock = serde_saphyr::from_str(yaml).unwrap();
+        let mut songs = vec![SongTagValueStore::new(); 4];
+        assert_matches!(
+            block.map_to(&mut songs),
+            Err(ControlError::SpanOutOfRange(_))
+        );
+    }
+
+    #[test]
+    fn test_tag_span_block_map_to() {
+        let yaml = r#"
+        composer:
+            "*": Fryderyk Chopin
+            "02-04": Fred Showpan
+            "05": Bill Yell
+        "#;
+        let block: TagSpanBlock = serde_saphyr::from_str(yaml).unwrap();
+        let mut songs = vec![SongTagValueStore::new(); 5];
+        block.map_to(&mut songs).unwrap();
+        assert_eq!(
+            songs,
+            vec![
+                SongTagValueStore::from([(
+                    "composer".to_string(),
+                    vec!["Fryderyk Chopin".to_string(),]
+                )]),
+                SongTagValueStore::from([(
+                    "composer".to_string(),
+                    vec!["Fryderyk Chopin".to_string(), "Fred Showpan".to_string(),]
+                )]),
+                SongTagValueStore::from([(
+                    "composer".to_string(),
+                    vec!["Fryderyk Chopin".to_string(), "Fred Showpan".to_string(),]
+                )]),
+                SongTagValueStore::from([(
+                    "composer".to_string(),
+                    vec!["Fryderyk Chopin".to_string(), "Fred Showpan".to_string(),]
+                )]),
+                SongTagValueStore::from([(
+                    "composer".to_string(),
+                    vec!["Fryderyk Chopin".to_string(), "Bill Yell".to_string(),]
+                )]),
+            ]
+        );
+    }
+
+    #[test]
+    fn test_tag_span_block_oob() {
+        let yaml = r#"
+        composer:
+            "*": Fryderyk Chopin
+            "02-04": Fred Showpan
+            "05": Bill Yell
+        "#;
+        let block: TagSpanBlock = serde_saphyr::from_str(yaml).unwrap();
         let mut songs = vec![SongTagValueStore::new(); 4];
         assert_matches!(
             block.map_to(&mut songs),
