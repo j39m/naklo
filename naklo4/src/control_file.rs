@@ -1,8 +1,12 @@
 use indexmap::IndexMap;
 use serde::Deserialize;
+use std::collections::HashSet;
 use std::range::RangeInclusive;
+use std::sync::LazyLock;
 use thiserror::Error;
 
+use crate::value::AddTag;
+use crate::value::SongTagValueStore;
 use crate::value::ValueType;
 
 type SpanType = String;
@@ -24,9 +28,41 @@ pub enum ControlError {
     SpanOutOfRange(usize),
     #[error("bad span: “{0}”")]
     BadSpan(String),
+    #[error("unknown tag: “{0}”")]
+    UnknownTag(String),
 }
 
 type ControlResult<T> = Result<T, ControlError>;
+
+fn tag_is_valid(tag: &str) -> ControlResult<()> {
+    static VALID_TAGS: LazyLock<HashSet<&str>> = LazyLock::new(|| {
+        HashSet::from([
+            "album",
+            "albumartist",
+            "albumsort",
+            "arranger",
+            "artist",
+            "composer",
+            "conductor",
+            "date",
+            "discnumber",
+            "discsubtitle",
+            "disctotal",
+            "genre",
+            "location",
+            "lyricist",
+            "performer",
+            "title",
+            "tracknumber",
+            "tracktotal",
+            "musicbrainz_albumid",
+        ])
+    });
+    if VALID_TAGS.contains(tag) {
+        return Ok(());
+    }
+    Err(ControlError::UnknownTag(tag.to_string()))
+}
 
 fn validate_range(
     range: RangeInclusive<usize>,
@@ -83,6 +119,25 @@ fn parse_span(span: &str, total_tracks: usize) -> ControlResult<Vec<usize>> {
     {
         Ok(ranges) => Ok(ranges.into_iter().flatten().collect()),
         Err(error) => Err(error),
+    }
+}
+
+trait MapsToSongs {
+    fn map_to<T: AddTag>(&self, songs: &mut Vec<T>) -> ControlResult<()>;
+}
+
+impl MapsToSongs for SpanTagBlock {
+    fn map_to<T: AddTag>(&self, songs: &mut Vec<T>) -> ControlResult<()> {
+        for (span_token, tags_and_values) in self.iter() {
+            let span = parse_span(span_token.as_str(), songs.len())?;
+            for (tag, val) in tags_and_values.iter() {
+                tag_is_valid(tag)?;
+                for index in span.iter() {
+                    songs[index - 1].add(tag, val);
+                }
+            }
+        }
+        Ok(())
     }
 }
 
@@ -195,6 +250,65 @@ mod tests {
                     },
                 }),
             }
+        );
+    }
+
+    #[test]
+    fn test_span_tag_block_map_to() {
+        let yaml = r#"
+        01 02:
+            composer: Fryderyk Chopin
+        02-05:
+            composer: Fred Showpan
+            arranger: Bill Yell
+        "#;
+        let block: SpanTagBlock = serde_saphyr::from_str(yaml).unwrap();
+        let mut songs = vec![SongTagValueStore::new(); 5];
+        block.map_to(&mut songs).unwrap();
+        assert_eq!(
+            songs,
+            vec![
+                SongTagValueStore::from([(
+                    "composer".to_string(),
+                    vec!["Fryderyk Chopin".to_string(),]
+                )]),
+                SongTagValueStore::from([
+                    (
+                        "composer".to_string(),
+                        vec!["Fryderyk Chopin".to_string(), "Fred Showpan".to_string(),]
+                    ),
+                    ("arranger".to_string(), vec!["Bill Yell".to_string(),]),
+                ]),
+                SongTagValueStore::from([
+                    ("composer".to_string(), vec!["Fred Showpan".to_string(),]),
+                    ("arranger".to_string(), vec!["Bill Yell".to_string(),]),
+                ]),
+                SongTagValueStore::from([
+                    ("composer".to_string(), vec!["Fred Showpan".to_string(),]),
+                    ("arranger".to_string(), vec!["Bill Yell".to_string(),]),
+                ]),
+                SongTagValueStore::from([
+                    ("composer".to_string(), vec!["Fred Showpan".to_string(),]),
+                    ("arranger".to_string(), vec!["Bill Yell".to_string(),]),
+                ]),
+            ]
+        );
+    }
+
+    #[test]
+    fn test_span_tag_block_oob() {
+        let yaml = r#"
+        01 02:
+            composer: Fryderyk Chopin
+        02-05:
+            composer: Fred Showpan
+            arranger: Bill Yell
+        "#;
+        let block: SpanTagBlock = serde_saphyr::from_str(yaml).unwrap();
+        let mut songs = vec![SongTagValueStore::new(); 4];
+        assert_matches!(
+            block.map_to(&mut songs),
+            Err(ControlError::SpanOutOfRange(_))
         );
     }
 }
