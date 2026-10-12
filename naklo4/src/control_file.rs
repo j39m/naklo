@@ -6,7 +6,6 @@ use std::sync::LazyLock;
 use thiserror::Error;
 
 use crate::value::AddTag;
-use crate::value::SongTagValueStore;
 use crate::value::ValueType;
 
 type SpanType = String;
@@ -205,6 +204,7 @@ impl MapsToSongs for ControlFile {
 mod tests {
     use super::*;
     use std::assert_matches;
+    use crate::value::SongTagValueStore;
 
     #[test]
     fn test_obvious_bad_spans() {
