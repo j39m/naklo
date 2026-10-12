@@ -34,19 +34,12 @@ pub struct Song {
 }
 
 impl Song {
-    fn from_single(path: &Path) -> SongResult<Song> {
+    fn from(path: &Path) -> SongResult<Song> {
         Ok(Song {
             path: path.to_path_buf(),
             mutagen_interaction: mutagen_interaction_closure_from(path)?,
             tags: SongTagValueStore::new(),
         })
-    }
-
-    pub fn from(paths: &Vec<PathBuf>) -> SongResult<Vec<Song>> {
-        Ok(paths
-            .iter()
-            .map(|p| Song::from_single(p))
-            .collect::<Result<_, _>>()?)
     }
 }
 
@@ -54,4 +47,11 @@ impl AddTag for Song {
     fn add(&mut self, tag: &str, val: &ValueType) {
         self.tags.add(tag, val);
     }
+}
+
+pub fn from(paths: &Vec<PathBuf>) -> SongResult<Vec<Song>> {
+    Ok(paths
+        .iter()
+        .map(|p| Song::from(p))
+        .collect::<Result<_, _>>()?)
 }
