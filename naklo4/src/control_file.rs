@@ -1,6 +1,8 @@
 use indexmap::IndexMap;
 use serde::Deserialize;
 use std::collections::HashSet;
+use std::fs::File;
+use std::path::PathBuf;
 use std::range::RangeInclusive;
 use std::sync::LazyLock;
 use thiserror::Error;
@@ -25,7 +27,7 @@ struct TagSpanBlock(IndexMap<TagType, IndexMap<SpanType, ValueType>>);
 struct TitleMergeBlock(IndexMap<SpanType, String>);
 
 #[derive(Debug, PartialEq, Deserialize)]
-struct ControlFile {
+pub struct ControlFile {
     #[serde(rename = "span-tag-block")]
     span_tag_block: Option<SpanTagBlock>,
     #[serde(rename = "tag-span-block")]
@@ -34,7 +36,7 @@ struct ControlFile {
     title_merge_block: Option<TitleMergeBlock>,
 }
 
-#[derive(Error, Debug, PartialEq)]
+#[derive(Error, Debug)]
 pub enum ControlError {
     #[error("out of range: “{0}”")]
     SpanOutOfRange(usize),
@@ -42,6 +44,11 @@ pub enum ControlError {
     BadSpan(String),
     #[error("unknown tag: “{0}”")]
     UnknownTag(String),
+
+    #[error(transparent)]
+    Io(#[from] std::io::Error),
+    #[error("parse failed in {0}")]
+    Serde(String),
 }
 
 type ControlResult<T> = Result<T, ControlError>;
@@ -198,6 +205,16 @@ impl MapsToSongs for ControlFile {
         }
         Ok(())
     }
+}
+
+pub fn from(paths: &Vec<PathBuf>) -> ControlResult<Vec<ControlFile>> {
+    paths
+        .iter()
+        .map(|p| {
+            Ok(serde_saphyr::from_reader::<_, ControlFile>(File::open(p)?)
+                .map_err(|e| ControlError::Serde(format!("“{}”: {e}", p.display())))?)
+        })
+        .collect()
 }
 
 #[cfg(test)]
