@@ -31,18 +31,24 @@ struct Cli {
 }
 
 #[derive(Error, Debug)]
-pub enum ErrorPassThrough {
+pub enum ErrorPassthrough {
     #[error(transparent)]
     ControlFile(#[from] crate::control_file::ControlError),
     #[error(transparent)]
     Song(#[from] crate::song::SongError),
 }
 
-fn main() -> Result<(), ErrorPassThrough> {
-    let cli = Cli::parse();
-    assert!(!cli.dewit);
-
+fn main_impl(cli: Cli) -> Result<(), ErrorPassthrough> {
     let controls = crate::control_file::from(&cli.control_files)?;
     let songs = crate::song::from(&cli.files)?;
     Ok(())
+}
+
+fn main() {
+    let cli = Cli::parse();
+    assert!(!cli.dewit);
+    if let Err(e) = main_impl(cli) {
+        eprintln!("{e}");
+        std::process::exit(1);
+    }
 }

@@ -47,9 +47,7 @@ pub enum ControlError {
 
     #[error(transparent)]
     Io(#[from] std::io::Error),
-    // Formatting handled downstairs: this seems to get ignored anyway
-    // when indirected through `ErrorPassThrough`.
-    #[error("")]
+    #[error("parse failed in {0}")]
     Serde(String),
 }
 
@@ -213,11 +211,8 @@ pub fn from(paths: &Vec<PathBuf>) -> ControlResult<Vec<ControlFile>> {
     paths
         .iter()
         .map(|p| {
-            Ok(
-                serde_saphyr::from_reader::<_, ControlFile>(File::open(p)?).map_err(|e| {
-                    ControlError::Serde(format!("parse failed in {}: {e}", p.display()))
-                })?,
-            )
+            Ok(serde_saphyr::from_reader::<_, ControlFile>(File::open(p)?)
+                .map_err(|e| ControlError::Serde(format!("{}: {e}", p.display())))?)
         })
         .collect()
 }
