@@ -2,6 +2,7 @@ mod control_file;
 mod song;
 mod value;
 
+use crate::song::Song;
 use clap::Parser;
 use std::path::PathBuf;
 
@@ -32,4 +33,9 @@ struct Cli {
 fn main() {
     let cli = Cli::parse();
     assert!(!cli.dewit);
+    let songs = Song::from(&cli.files);
+    if let Err(e) = songs {
+        eprintln!("{e}");
+        std::process::exit(1);
+    }
 }
