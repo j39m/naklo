@@ -203,8 +203,8 @@ impl MapsToSongs for ControlFile {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::assert_matches;
     use crate::value::SongTagValueStore;
+    use std::assert_matches;
 
     #[test]
     fn test_obvious_bad_spans() {
