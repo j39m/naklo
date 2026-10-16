@@ -30,6 +30,9 @@ impl SongTagValueStore {
     pub fn new() -> Self {
         Self(HashMap::new())
     }
+    pub fn get(&self, tag: &str) -> Option<&Vec<String>> {
+        self.0.get(tag)
+    }
 }
 
 impl<const N: usize> From<[(String, Vec<String>); N]> for SongTagValueStore {
