@@ -234,17 +234,20 @@ mod tests {
 
     #[test]
     fn test_single_track_span() {
-        assert_eq!(parse_span("1", 1), Ok(vec![1usize,]));
+        assert_eq!(parse_span("1", 1).unwrap(), vec![1usize,]);
     }
 
     #[test]
     fn test_multiple_track_span() {
-        assert_eq!(parse_span("1 2 4", 4), Ok(vec![1usize, 2, 4]));
-        assert_eq!(parse_span("1-4", 4), Ok(vec![1usize, 2, 3, 4]));
-        assert_eq!(parse_span("1-4 8 10", 10), Ok(vec![1usize, 2, 3, 4, 8, 10]));
+        assert_eq!(parse_span("1 2 4", 4).unwrap(), vec![1usize, 2, 4]);
+        assert_eq!(parse_span("1-4", 4).unwrap(), vec![1usize, 2, 3, 4]);
         assert_eq!(
-            parse_span("1-3 5 7-9", 10),
-            Ok(vec![1usize, 2, 3, 5, 7, 8, 9])
+            parse_span("1-4 8 10", 10).unwrap(),
+            vec![1usize, 2, 3, 4, 8, 10]
+        );
+        assert_eq!(
+            parse_span("1-3 5 7-9", 10).unwrap(),
+            vec![1usize, 2, 3, 5, 7, 8, 9]
         );
     }
 
@@ -256,8 +259,10 @@ mod tests {
     #[test]
     fn test_wildcard_span() {
         assert_eq!(
-            parse_span("*", 99),
-            Ok(RangeInclusive::from(1usize..=99).into_iter().collect())
+            parse_span("*", 99).unwrap(),
+            RangeInclusive::from(1usize..=99)
+                .into_iter()
+                .collect::<Vec<_>>()
         );
     }
 
