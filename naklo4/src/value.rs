@@ -23,7 +23,20 @@ pub trait AddTag {
     fn add(&mut self, tag: &str, val: &ValueType);
 }
 
-pub type SongTagValueStore = HashMap<String, Vec<String>>;
+#[derive(Debug, Clone, PartialEq)]
+pub struct SongTagValueStore(HashMap<String, Vec<String>>);
+
+impl SongTagValueStore {
+    pub fn new() -> Self {
+        Self(HashMap::new())
+    }
+}
+
+impl<const N: usize> From<[(String, Vec<String>); N]> for SongTagValueStore {
+    fn from(arr: [(String, Vec<String>); N]) -> Self {
+        Self(HashMap::from(arr))
+    }
+}
 
 impl AddTag for SongTagValueStore {
     fn add(&mut self, tag: &str, val: &ValueType) {
@@ -31,9 +44,12 @@ impl AddTag for SongTagValueStore {
             ValueType::Single(single) => vec![single.clone()],
             ValueType::Multiple(multiple) => multiple.clone(),
         };
-        if !self.contains_key(tag) {
-            self.insert(tag.to_string(), vec![]);
+        if !self.0.contains_key(tag) {
+            self.0.insert(tag.to_string(), vec![]);
         }
-        self.get_mut(tag).expect("was inserted").extend(val_vector);
+        self.0
+            .get_mut(tag)
+            .expect("was inserted")
+            .extend(val_vector);
     }
 }
