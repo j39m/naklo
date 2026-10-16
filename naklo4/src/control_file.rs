@@ -5,7 +5,6 @@ use std::path::PathBuf;
 use std::range::RangeInclusive;
 use thiserror::Error;
 
-use crate::tag::tag_is_valid;
 use crate::value::AddTag;
 use crate::value::ValueType;
 
@@ -110,6 +109,10 @@ fn parse_span(span: &str, total_tracks: usize) -> ControlResult<Vec<usize>> {
     }
 }
 
+fn tag_is_valid(tag: &str) -> ControlResult<()> {
+    crate::tag::tag_is_valid(tag).ok_or_else(|| ControlError::UnknownTag(tag.to_string()))
+}
+
 pub trait MapsToSongs {
     fn map_to<T: AddTag>(&self, songs: &mut Vec<T>) -> ControlResult<()>;
 }
@@ -119,7 +122,7 @@ impl MapsToSongs for SpanTagBlock {
         for (span_token, tags_and_values) in self.0.iter() {
             let span = parse_span(span_token.as_str(), songs.len())?;
             for (tag, val) in tags_and_values.iter() {
-                tag_is_valid(tag).ok_or_else(|| ControlError::UnknownTag(tag.to_string()))?;
+                tag_is_valid(tag)?;
                 for index in span.iter() {
                     songs[index - 1].add(tag, val);
                 }
@@ -132,7 +135,7 @@ impl MapsToSongs for SpanTagBlock {
 impl MapsToSongs for TagSpanBlock {
     fn map_to<T: AddTag>(&self, songs: &mut Vec<T>) -> ControlResult<()> {
         for (tag, spans_and_values) in self.0.iter() {
-            tag_is_valid(tag).ok_or_else(|| ControlError::UnknownTag(tag.to_string()))?;
+            tag_is_valid(tag)?;
             for (span_token, val) in spans_and_values.iter() {
                 let span = parse_span(span_token.as_str(), songs.len())?;
                 for index in span.iter() {
