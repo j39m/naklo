@@ -1,12 +1,11 @@
 use indexmap::IndexMap;
 use serde::Deserialize;
-use std::collections::HashSet;
 use std::fs::File;
 use std::path::PathBuf;
 use std::range::RangeInclusive;
-use std::sync::LazyLock;
 use thiserror::Error;
 
+use crate::tag::tag_is_valid;
 use crate::value::AddTag;
 use crate::value::ValueType;
 
@@ -52,36 +51,6 @@ pub enum ControlError {
 }
 
 type ControlResult<T> = Result<T, ControlError>;
-
-fn tag_is_valid(tag: &str) -> ControlResult<()> {
-    static VALID_TAGS: LazyLock<HashSet<&str>> = LazyLock::new(|| {
-        HashSet::from([
-            "album",
-            "albumartist",
-            "albumsort",
-            "arranger",
-            "artist",
-            "composer",
-            "conductor",
-            "date",
-            "discnumber",
-            "discsubtitle",
-            "disctotal",
-            "genre",
-            "location",
-            "lyricist",
-            "performer",
-            "title",
-            "tracknumber",
-            "tracktotal",
-            "musicbrainz_albumid",
-        ])
-    });
-    if VALID_TAGS.contains(tag) {
-        return Ok(());
-    }
-    Err(ControlError::UnknownTag(tag.to_string()))
-}
 
 fn validate_range(
     range: RangeInclusive<usize>,
@@ -150,7 +119,7 @@ impl MapsToSongs for SpanTagBlock {
         for (span_token, tags_and_values) in self.0.iter() {
             let span = parse_span(span_token.as_str(), songs.len())?;
             for (tag, val) in tags_and_values.iter() {
-                tag_is_valid(tag)?;
+                tag_is_valid(tag).ok_or_else(|| ControlError::UnknownTag(tag.to_string()))?;
                 for index in span.iter() {
                     songs[index - 1].add(tag, val);
                 }
@@ -163,7 +132,7 @@ impl MapsToSongs for SpanTagBlock {
 impl MapsToSongs for TagSpanBlock {
     fn map_to<T: AddTag>(&self, songs: &mut Vec<T>) -> ControlResult<()> {
         for (tag, spans_and_values) in self.0.iter() {
-            tag_is_valid(tag)?;
+            tag_is_valid(tag).ok_or_else(|| ControlError::UnknownTag(tag.to_string()))?;
             for (span_token, val) in spans_and_values.iter() {
                 let span = parse_span(span_token.as_str(), songs.len())?;
                 for index in span.iter() {

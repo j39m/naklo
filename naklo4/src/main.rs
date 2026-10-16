@@ -1,5 +1,6 @@
 mod control_file;
 mod song;
+mod tag;
 mod value;
 
 use clap::Parser;
