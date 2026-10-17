@@ -136,7 +136,12 @@ impl LintResult {
             HashMap::new();
         for song in songs {
             title_lints.push(song.lint_title());
-            for (tag, values) in song.tags.0.iter() {
+            for (tag, values) in song
+                .tags
+                .0
+                .iter()
+                .filter(|(t, _v)| crate::tag::tag_is_homogeneous(t))
+            {
                 *(*tags_to_values_to_counts
                     .entry(tag)
                     .or_insert(HashMap::new()))
@@ -269,5 +274,14 @@ mod tests {
         let lints = LintResult::from(&songs).homogeneity_lints;
         assert_eq!(lints.len(), 1);
         assert_matches!(lints[0], SongError::TagNotHomogeneous(_));
+    }
+
+    #[test]
+    fn heterogeneous_tags_can_differ() {
+        let mut songs = vec![Song::for_testing(), Song::for_testing()];
+        songs[0].add("title", &ValueType::Single("general".to_string()));
+        songs[1].add("title", &ValueType::Single("kenobi".to_string()));
+        let lints = LintResult::from(&songs).homogeneity_lints;
+        assert_eq!(lints.len(), 0);
     }
 }
