@@ -108,13 +108,31 @@ impl Song {
         Ok(())
     }
 
-    fn apply<'py>(&self, py: Python<'py>, preserve_existing: bool) -> SongResult<()> {
+    fn apply<'py>(
+        &self,
+        py: Python<'py>,
+        preserve_existing: bool,
+        track_number: usize,
+        total_tracks: usize,
+    ) -> SongResult<()> {
         let mutagen_object = (self.mutagen_object_getter)(py, &self.path)?;
         if !preserve_existing {
             mutagen_object.call_method0("clear")?;
         }
         for (tag, values) in self.tags.0.iter() {
             mutagen_object.call_method1("__setitem__", (tag, values))?;
+        }
+        if self.tags.get("tracknumber").is_none() {
+            mutagen_object.call_method1(
+                "__setitem__",
+                ("tracknumber", vec![track_number.to_string()]),
+            )?;
+        }
+        if self.tags.get("tracktotal").is_none() {
+            mutagen_object.call_method1(
+                "__setitem__",
+                ("tracktotal", vec![total_tracks.to_string()]),
+            )?;
         }
         mutagen_object.call_method0("save")?;
         Ok(())
@@ -142,11 +160,15 @@ impl fmt::Display for Song {
 }
 
 pub fn apply(songs: Vec<Song>, preserve_existing: bool) -> SongResult<()> {
+    let total_songs = songs.len();
     Python::initialize();
     Python::attach(|py| {
         songs
             .into_iter()
-            .map(|s| s.apply(py, preserve_existing))
+            .enumerate()
+            .map(|(zero_indexed, song)| {
+                song.apply(py, preserve_existing, zero_indexed + 1, total_songs)
+            })
             .collect()
     })
 }
