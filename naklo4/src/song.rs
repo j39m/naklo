@@ -1,3 +1,4 @@
+use std::collections::{HashMap, HashSet};
 use std::path::Path;
 use std::path::PathBuf;
 use thiserror::Error;
@@ -16,6 +17,8 @@ pub enum SongError {
     DoubleQuote(String),
     #[error("unbalanced quotes: “{0}”")]
     UnbalancedQuotes(String),
+    #[error("tag “{0}” not homogeneous")]
+    TagNotHomogeneous(String),
 }
 
 type SongResult<T> = Result<T, SongError>;
@@ -105,6 +108,65 @@ pub fn from(paths: &Vec<PathBuf>) -> SongResult<Vec<Song>> {
         .collect::<Result<_, _>>()?)
 }
 
+pub struct LintResult {
+    title_lints: Vec<SongError>,
+    homogeneity_lints: Vec<SongError>,
+    homogeneous_tags: SongTagValueStore,
+}
+
+impl LintResult {
+    pub fn from(songs: &Vec<Song>) -> Self {
+        let mut title_lints: Vec<SongResult<()>> = Vec::new();
+        let mut nonhomogeneous_tags: HashSet<&str> = HashSet::new();
+
+        // Hierarchy of tags => [values => counts]. A tag is homogeneous
+        // when (for each value) counts == total_songs.
+        //
+        // In theory we _could_ get away with simply mapping
+        // tags => values and assert that the collected length is
+        // 0 % total_songs, but there are weird silly corner cases —
+        // for example, `album` (rarely) and `genre` (sometimes) can
+        // take multiple values. Not keeping a strict count means one
+        // could construct a basket of values that satisfy this without
+        // actually being homogeneous.
+        //
+        // For example, imagine an erroneously tagged album of 13 songs.
+        // 1 song has 13 `album` values, and the other 12 have zero.
+        let mut tags_to_values_to_counts: HashMap<&str, HashMap<&Vec<String>, usize>> =
+            HashMap::new();
+        for song in songs {
+            title_lints.push(song.lint_title());
+            for (tag, values) in song.tags.0.iter() {
+                *(*tags_to_values_to_counts
+                    .entry(tag)
+                    .or_insert(HashMap::new()))
+                .entry(values)
+                .or_insert(0) += 1;
+            }
+        }
+        let mut homogeneous_tags = SongTagValueStore::new();
+        for (tag, map) in tags_to_values_to_counts {
+            for (value, count) in map.iter() {
+                if *count != songs.len() {
+                    nonhomogeneous_tags.insert(tag);
+                }
+            }
+            homogeneous_tags.add(
+                tag,
+                &ValueType::Multiple(map.iter().next().unwrap().0.to_vec()),
+            );
+        }
+        Self {
+            title_lints: title_lints.into_iter().filter_map(|r| r.err()).collect(),
+            homogeneity_lints: nonhomogeneous_tags
+                .into_iter()
+                .map(|t| SongError::TagNotHomogeneous(t.to_string()))
+                .collect(),
+            homogeneous_tags: homogeneous_tags,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -178,5 +240,34 @@ mod tests {
             &ValueType::Single(String::from(r#"「」「「」「」」」「"#)),
         );
         assert!(title_with_balanced_ja_quotes.lint_title().is_ok());
+    }
+
+    #[test]
+    fn empty_songs_are_homogeneous() {
+        let empty = vec![Song::for_testing(), Song::for_testing()];
+        let lints = LintResult::from(&empty).homogeneity_lints;
+        assert_eq!(lints.len(), 0);
+    }
+
+    #[test]
+    fn same_albums_are_homogeneous() {
+        let mut songs = vec![Song::for_testing(), Song::for_testing()];
+        songs[0].add("album", &ValueType::Single("general".to_string()));
+        songs[1].add("album", &ValueType::Single("general".to_string()));
+        let lints = LintResult::from(&songs).homogeneity_lints;
+        assert_eq!(lints.len(), 0);
+    }
+
+    #[test]
+    fn different_albums_are_not_homogeneous() {
+        let mut songs = vec![Song::for_testing(), Song::for_testing()];
+        songs[0].add("album", &ValueType::Single("general".to_string()));
+        songs[1].add(
+            "album",
+            &ValueType::Multiple(vec!["general".to_string(), "kenobi".to_string()]),
+        );
+        let lints = LintResult::from(&songs).homogeneity_lints;
+        assert_eq!(lints.len(), 1);
+        assert_matches!(lints[0], SongError::TagNotHomogeneous(_));
     }
 }

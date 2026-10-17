@@ -42,3 +42,7 @@ fn heterogeneous_tags() -> &'static StaticTagMap {
 pub fn tag_is_valid(tag: &str) -> bool {
     heterogeneous_tags().contains_key(tag) || homogeneous_tags().contains_key(tag)
 }
+
+pub fn tag_is_homogeneous(tag: &str) -> bool {
+    homogeneous_tags().contains_key(tag)
+}
