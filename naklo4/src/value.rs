@@ -3,7 +3,6 @@
 // trait to provide a rendezvous for the control file and song modules.
 
 use serde::Deserialize;
-use std::collections::HashMap;
 
 // The `#[serde(untagged)]` is load-bearing here. Without this, serde
 // would expect the variant names directly in the YAML. Something like:
@@ -23,13 +22,15 @@ pub trait AddTag {
     fn add(&mut self, tag: &str, val: &ValueType);
 }
 
+type StvInner = std::collections::HashMap<String, Vec<String>>;
 #[derive(Debug, Clone, PartialEq)]
-pub struct SongTagValueStore(HashMap<String, Vec<String>>);
+pub struct SongTagValueStore(pub StvInner);
 
 impl SongTagValueStore {
     pub fn new() -> Self {
-        Self(HashMap::new())
+        Self(StvInner::new())
     }
+
     pub fn get(&self, tag: &str) -> Option<&Vec<String>> {
         self.0.get(tag)
     }
@@ -37,7 +38,7 @@ impl SongTagValueStore {
 
 impl<const N: usize> From<[(String, Vec<String>); N]> for SongTagValueStore {
     fn from(arr: [(String, Vec<String>); N]) -> Self {
-        Self(HashMap::from(arr))
+        Self(StvInner::from(arr))
     }
 }
 
