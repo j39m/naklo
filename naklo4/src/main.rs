@@ -51,7 +51,7 @@ fn main_impl(cli: Cli) -> Result<(), ErrorPassthrough> {
         .collect::<Result<(), ControlError>>()?;
     let lint = LintResult::from(&songs);
     if cli.dewit {
-        todo!();
+        return Ok(crate::song::apply(songs)?);
     }
     lint.title_lints.into_iter().for_each(|e| println!("{e}"));
     lint.homogeneity_lints

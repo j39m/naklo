@@ -1,3 +1,5 @@
+use pyo3::prelude::*;
+use pyo3::types::PyType;
 use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::path::{Path, PathBuf};
@@ -5,7 +7,7 @@ use thiserror::Error;
 
 use crate::value::{AddTag, HomogeneousTagValueStore, SongTagValueStore, ValueType};
 
-#[derive(Error, Debug, PartialEq)]
+#[derive(Error, Debug)]
 pub enum SongError {
     #[error("unsupported song: “{0}”")]
     UnsupportedSong(PathBuf),
@@ -19,16 +21,26 @@ pub enum SongError {
     UnbalancedQuotes(String),
     #[error("tag “{0}” not homogeneous")]
     TagNotHomogeneous(String),
+
+    #[error(transparent)]
+    Python(#[from] pyo3::PyErr),
 }
 
 type SongResult<T> = Result<T, SongError>;
 
-fn mutagen_flac(path: &Path) {}
+fn mutagen_flac<'py>(py: Python<'py>, path: &Path) -> PyResult<Bound<'py, PyAny>> {
+    static FLAC: pyo3::sync::PyOnceLock<Py<PyType>> = pyo3::sync::PyOnceLock::new();
+    FLAC.import(py, "mutagen.flac", "FLAC")?.call1((path,))
+}
 
 #[cfg(test)]
-fn mutagen_dummy(_path: &Path) {}
+fn mutagen_dummy<'py>(_py: Python<'py>, _path: &Path) -> PyResult<Bound<'py, PyAny>> {
+    unreachable!("not called for testing")
+}
 
-fn mutagen_interaction_closure_from(path: &Path) -> SongResult<fn(&Path)> {
+fn mutagen_object_getter_closure_from(
+    path: &Path,
+) -> SongResult<for<'py> fn(Python<'py>, &Path) -> PyResult<Bound<'py, PyAny>>> {
     let Some(extension_osstr) = path.extension() else {
         return Err(SongError::UnsupportedSong(path.to_path_buf()));
     };
@@ -43,7 +55,7 @@ fn mutagen_interaction_closure_from(path: &Path) -> SongResult<fn(&Path)> {
 
 pub struct Song {
     path: PathBuf,
-    mutagen_interaction: fn(&Path),
+    mutagen_object_getter: for<'py> fn(Python<'py>, &Path) -> PyResult<Bound<'py, PyAny>>,
     tags: SongTagValueStore,
 }
 
@@ -51,7 +63,7 @@ impl Song {
     fn from(path: &Path) -> SongResult<Self> {
         Ok(Self {
             path: path.to_path_buf(),
-            mutagen_interaction: mutagen_interaction_closure_from(path)?,
+            mutagen_object_getter: mutagen_object_getter_closure_from(path)?,
             tags: SongTagValueStore::new(),
         })
     }
@@ -60,7 +72,7 @@ impl Song {
     fn for_testing() -> Self {
         Self {
             path: PathBuf::new(),
-            mutagen_interaction: mutagen_dummy,
+            mutagen_object_getter: mutagen_dummy,
             tags: SongTagValueStore::new(),
         }
     }
@@ -95,6 +107,16 @@ impl Song {
         }
         Ok(())
     }
+
+    fn apply<'py>(&self, py: Python<'py>) -> SongResult<()> {
+        let mutagen_object = (self.mutagen_object_getter)(py, &self.path)?;
+        mutagen_object.call_method0("clear")?;
+        for (tag, values) in self.tags.0.iter() {
+            mutagen_object.call_method1("__setitem__", (tag, values))?;
+        }
+        mutagen_object.call_method0("save")?;
+        Ok(())
+    }
 }
 
 impl AddTag for Song {
@@ -115,6 +137,11 @@ impl fmt::Display for Song {
         write!(f, "《{}》\n", self.get_title().unwrap_or("[NO TITLE]"))?;
         write!(f, "{}", self.tags)
     }
+}
+
+pub fn apply(songs: Vec<Song>) -> SongResult<()> {
+    Python::initialize();
+    Python::attach(|py| songs.into_iter().map(|s| s.apply(py)).collect())
 }
 
 pub struct LintResult {
@@ -187,7 +214,7 @@ mod tests {
 
     #[test]
     fn empty_title_is_dubious() {
-        let mut no_title = Song::for_testing();
+        let no_title = Song::for_testing();
         assert_matches!(no_title.lint_title(), Err(SongError::DubiousTitle(_)));
     }
 
