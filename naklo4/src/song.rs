@@ -25,6 +25,7 @@ type SongResult<T> = Result<T, SongError>;
 
 fn mutagen_flac(path: &Path) {}
 
+#[cfg(test)]
 fn mutagen_dummy(_path: &Path) {}
 
 fn mutagen_interaction_closure_from(path: &Path) -> SongResult<fn(&Path)> {
@@ -55,6 +56,7 @@ impl Song {
         })
     }
 
+    #[cfg(test)]
     fn for_testing() -> Self {
         Self {
             path: PathBuf::new(),
@@ -158,7 +160,7 @@ impl LintResult {
         }
         let mut homogeneous_tags = HomogeneousTagValueStore::new();
         for (tag, map) in tags_to_values_to_counts {
-            for (value, count) in map.iter() {
+            for (_value, count) in map.iter() {
                 if *count != songs.len() {
                     nonhomogeneous_tags.insert(tag);
                 }
