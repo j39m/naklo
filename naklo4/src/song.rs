@@ -159,9 +159,21 @@ impl fmt::Display for Song {
     }
 }
 
-pub fn apply(songs: Vec<Song>, preserve_existing: bool) -> SongResult<()> {
+pub fn apply(
+    songs: Vec<Song>,
+    preserve_existing: bool,
+    only: Option<Vec<usize>>,
+) -> SongResult<()> {
     let total_songs = songs.len();
     Python::initialize();
+    if let Some(span) = only {
+        return Python::attach(|py| {
+            for one_indexed in span {
+                songs[one_indexed - 1].apply(py, preserve_existing, one_indexed, total_songs)?;
+            }
+            Ok(())
+        });
+    }
     Python::attach(|py| {
         songs
             .into_iter()

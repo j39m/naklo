@@ -54,8 +54,13 @@ fn main_impl(cli: Cli) -> Result<(), ErrorPassthrough> {
         // Hmm, even without `clear()`, tags seem to be clobbered. This
         // is a bug?
         assert!(!cli.preserve_existing);
-        return Ok(crate::song::apply(songs, cli.preserve_existing)?);
+        let mut only: Option<Vec<usize>> = None;
+        if let Some(span) = cli.only {
+            only = Some(crate::control_file::parse_span(&span, songs.len())?);
+        }
+        return Ok(crate::song::apply(songs, cli.preserve_existing, only)?);
     }
+
     lint.title_lints.into_iter().for_each(|e| println!("{e}"));
     lint.homogeneity_lints
         .into_iter()

@@ -98,7 +98,7 @@ fn parse_span_token(token: &str, total_tracks: usize) -> ControlResult<RangeIncl
     Err(ControlError::BadSpan(token.to_string()))
 }
 
-fn parse_span(span: &str, total_tracks: usize) -> ControlResult<Vec<usize>> {
+pub fn parse_span(span: &str, total_tracks: usize) -> ControlResult<Vec<usize>> {
     match span
         .split_whitespace()
         .map(|token| parse_span_token(token, total_tracks))
