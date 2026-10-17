@@ -1,21 +1,21 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::LazyLock;
 
 struct TagDetails {}
 type StaticTagMap = HashMap<&'static str, TagDetails>;
 
-fn homogeneous_tags() -> &'static StaticTagMap {
-    static HOM: LazyLock<StaticTagMap> = LazyLock::new(|| {
-        HashMap::from([
-            ("album", TagDetails {}),
-            ("albumartist", TagDetails {}),
-            ("albumsort", TagDetails {}),
-            ("discnumber", TagDetails {}),
-            ("discsubtitle", TagDetails {}),
-            ("disctotal", TagDetails {}),
-            ("genre", TagDetails {}),
-            ("tracktotal", TagDetails {}),
-            ("musicbrainz_albumid", TagDetails {}),
+fn homogeneous_tags() -> &'static HashSet<&'static str> {
+    static HOM: LazyLock<HashSet<&str>> = LazyLock::new(|| {
+        HashSet::from([
+            "album",
+            "albumartist",
+            "albumsort",
+            "discnumber",
+            "discsubtitle",
+            "disctotal",
+            "genre",
+            "tracktotal",
+            "musicbrainz_albumid",
         ])
     });
     &*HOM
@@ -40,9 +40,9 @@ fn heterogeneous_tags() -> &'static StaticTagMap {
 }
 
 pub fn tag_is_valid(tag: &str) -> bool {
-    heterogeneous_tags().contains_key(tag) || homogeneous_tags().contains_key(tag)
+    heterogeneous_tags().contains_key(tag) || homogeneous_tags().contains(tag)
 }
 
 pub fn tag_is_homogeneous(tag: &str) -> bool {
-    homogeneous_tags().contains_key(tag)
+    homogeneous_tags().contains(tag)
 }
