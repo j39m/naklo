@@ -108,9 +108,11 @@ impl Song {
         Ok(())
     }
 
-    fn apply<'py>(&self, py: Python<'py>) -> SongResult<()> {
+    fn apply<'py>(&self, py: Python<'py>, preserve_existing: bool) -> SongResult<()> {
         let mutagen_object = (self.mutagen_object_getter)(py, &self.path)?;
-        mutagen_object.call_method0("clear")?;
+        if !preserve_existing {
+            mutagen_object.call_method0("clear")?;
+        }
         for (tag, values) in self.tags.0.iter() {
             mutagen_object.call_method1("__setitem__", (tag, values))?;
         }
@@ -139,9 +141,14 @@ impl fmt::Display for Song {
     }
 }
 
-pub fn apply(songs: Vec<Song>) -> SongResult<()> {
+pub fn apply(songs: Vec<Song>, preserve_existing: bool) -> SongResult<()> {
     Python::initialize();
-    Python::attach(|py| songs.into_iter().map(|s| s.apply(py)).collect())
+    Python::attach(|py| {
+        songs
+            .into_iter()
+            .map(|s| s.apply(py, preserve_existing))
+            .collect()
+    })
 }
 
 pub struct LintResult {
