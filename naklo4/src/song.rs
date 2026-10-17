@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
-use std::path::{Path, PathBuf};
 use std::fmt;
+use std::path::{Path, PathBuf};
 use thiserror::Error;
 
 use crate::value::{AddTag, HomogeneousTagValueStore, SongTagValueStore, ValueType};

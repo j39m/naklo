@@ -68,13 +68,13 @@ impl AddTag for SongTagValueStore {
 impl fmt::Display for SongTagValueStore {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         // Let the containing `Song` write out the title.
-        let sorted_keys: Vec<&str> = self
+        let mut sorted_keys: Vec<&str> = self
             .0
             .keys()
             .map(|t| t.as_str())
             .filter(|t| t != &"title" && t != &"tracknumber" && !crate::tag::tag_is_homogeneous(t))
             .collect();
-        //sorted_keys.sort_by_key()
+        sorted_keys.sort_by_key(|t| crate::tag::tag_details(t).sort_order.unwrap_or(t));
         for tag in sorted_keys {
             write!(f, "    {tag:10}:")?;
             write_value_after_tag(&self.0[tag], f)?;

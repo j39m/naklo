@@ -1,7 +1,9 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::LazyLock;
 
-struct TagDetails {}
+pub struct TagDetails {
+    pub sort_order: Option<&'static str>,
+}
 type StaticTagMap = HashMap<&'static str, TagDetails>;
 
 fn homogeneous_tags() -> &'static HashSet<&'static str> {
@@ -24,16 +26,36 @@ fn homogeneous_tags() -> &'static HashSet<&'static str> {
 fn heterogeneous_tags() -> &'static StaticTagMap {
     static HETEROGENEOUS: LazyLock<StaticTagMap> = LazyLock::new(|| {
         HashMap::from([
-            ("arranger", TagDetails {}),
-            ("artist", TagDetails {}),
-            ("composer", TagDetails {}),
-            ("conductor", TagDetails {}),
-            ("date", TagDetails {}),
-            ("location", TagDetails {}),
-            ("lyricist", TagDetails {}),
-            ("performer", TagDetails {}),
-            ("title", TagDetails {}),
-            ("tracknumber", TagDetails {}),
+            ("arranger", TagDetails { sort_order: None }),
+            (
+                "artist",
+                TagDetails {
+                    sort_order: Some("00"),
+                },
+            ),
+            (
+                "composer",
+                TagDetails {
+                    sort_order: Some("01"),
+                },
+            ),
+            ("conductor", TagDetails { sort_order: None }),
+            (
+                "date",
+                TagDetails {
+                    sort_order: Some("zb"),
+                },
+            ),
+            (
+                "location",
+                TagDetails {
+                    sort_order: Some("za"),
+                },
+            ),
+            ("lyricist", TagDetails { sort_order: None }),
+            ("performer", TagDetails { sort_order: None }),
+            ("title", TagDetails { sort_order: None }),
+            ("tracknumber", TagDetails { sort_order: None }),
         ])
     });
     &*HETEROGENEOUS
@@ -45,4 +67,8 @@ pub fn tag_is_valid(tag: &str) -> bool {
 
 pub fn tag_is_homogeneous(tag: &str) -> bool {
     homogeneous_tags().contains(tag)
+}
+
+pub fn tag_details(tag: &str) -> &TagDetails {
+    &heterogeneous_tags()[tag]
 }
