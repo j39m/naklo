@@ -4,6 +4,7 @@
 
 use serde::Deserialize;
 use std::collections::BTreeMap;
+use std::fmt;
 
 // The `#[serde(untagged)]` is load-bearing here. Without this, serde
 // would expect the variant names directly in the YAML. Something like:
@@ -21,6 +22,14 @@ pub enum ValueType {
 
 pub trait AddTag {
     fn add(&mut self, tag: &str, val: &ValueType);
+}
+
+const MULTIVAL_JOINER: &str = "\n        - ";
+fn write_value_after_tag(val: &Vec<String>, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    match val.len() {
+        1 => write!(f, " {}", val[0]),
+        _ => write!(f, "{MULTIVAL_JOINER}{}", val.join(MULTIVAL_JOINER)),
+    }
 }
 
 type StvInner = std::collections::HashMap<String, Vec<String>>;
@@ -64,5 +73,17 @@ pub struct HomogeneousTagValueStore(pub BTreeMap<String, Vec<String>>);
 impl HomogeneousTagValueStore {
     pub fn new() -> Self {
         Self(BTreeMap::new())
+    }
+}
+
+impl fmt::Display for HomogeneousTagValueStore {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Homogeneous tags:\n")?;
+        for (tag, values) in self.0.iter() {
+            write!(f, "    {tag:20}:")?;
+            write_value_after_tag(&values, f)?;
+            write!(f, "\n")?;
+        }
+        Ok(())
     }
 }

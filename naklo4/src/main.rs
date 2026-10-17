@@ -7,6 +7,9 @@ use clap::Parser;
 use std::path::PathBuf;
 use thiserror::Error;
 
+use crate::control_file::{ControlError, MapsToSongs};
+use crate::song::LintResult;
+
 #[derive(Parser)]
 #[command(version)]
 struct Cli {
@@ -34,14 +37,27 @@ struct Cli {
 #[derive(Error, Debug)]
 pub enum ErrorPassthrough {
     #[error(transparent)]
-    ControlFile(#[from] crate::control_file::ControlError),
+    ControlFile(#[from] ControlError),
     #[error(transparent)]
     Song(#[from] crate::song::SongError),
 }
 
 fn main_impl(cli: Cli) -> Result<(), ErrorPassthrough> {
     let controls = crate::control_file::from(&cli.control_files)?;
-    let songs = crate::song::from(&cli.files)?;
+    let mut songs = crate::song::from(&cli.files)?;
+    controls
+        .into_iter()
+        .map(|c| c.map_to(&mut songs))
+        .collect::<Result<(), ControlError>>()?;
+    let lint = LintResult::from(&songs);
+    if cli.dewit {
+        todo!();
+    }
+    lint.title_lints.into_iter().for_each(|e| println!("{e}"));
+    lint.homogeneity_lints
+        .into_iter()
+        .for_each(|e| println!("{e}"));
+    println!("{}", lint.homogeneous_tags);
     Ok(())
 }
 
