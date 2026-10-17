@@ -64,7 +64,6 @@ fn main_impl(cli: Cli) -> Result<(), ErrorPassthrough> {
 
 fn main() {
     let cli = Cli::parse();
-    assert!(!cli.dewit);
     if let Err(e) = main_impl(cli) {
         eprintln!("{e}");
         std::process::exit(1);
