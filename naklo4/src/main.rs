@@ -51,9 +51,6 @@ fn main_impl(cli: Cli) -> Result<(), ErrorPassthrough> {
         .collect::<Result<(), ControlError>>()?;
     let lint = LintResult::from(&songs);
     if cli.dewit {
-        // Hmm, even without `clear()`, tags seem to be clobbered. This
-        // is a bug?
-        assert!(!cli.preserve_existing);
         let mut only: Option<Vec<usize>> = None;
         if let Some(span) = cli.only {
             only = Some(crate::control_file::parse_span(&span, songs.len())?);
