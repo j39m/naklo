@@ -58,6 +58,7 @@ fn main_impl(cli: Cli) -> Result<(), ErrorPassthrough> {
         .into_iter()
         .for_each(|e| println!("{e}"));
     println!("{}", lint.homogeneous_tags);
+    songs.into_iter().for_each(|s| println!("{s}"));
     Ok(())
 }
 

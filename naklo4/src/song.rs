@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
-use std::path::Path;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+use std::fmt;
 use thiserror::Error;
 
 use crate::value::{AddTag, HomogeneousTagValueStore, SongTagValueStore, ValueType};
@@ -106,6 +106,13 @@ pub fn from(paths: &Vec<PathBuf>) -> SongResult<Vec<Song>> {
         .iter()
         .map(|p| Song::from(p))
         .collect::<Result<_, _>>()?)
+}
+
+impl fmt::Display for Song {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "《{}》\n", self.get_title().unwrap_or("[NO TITLE]"))?;
+        write!(f, "{}", self.tags)
+    }
 }
 
 pub struct LintResult {
