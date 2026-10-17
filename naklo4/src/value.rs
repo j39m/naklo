@@ -58,12 +58,9 @@ impl AddTag for SongTagValueStore {
             ValueType::Single(single) => vec![single.clone()],
             ValueType::Multiple(multiple) => multiple.clone(),
         };
-        if !self.0.contains_key(tag) {
-            self.0.insert(tag.to_string(), vec![]);
-        }
         self.0
-            .get_mut(tag)
-            .expect("was inserted")
+            .entry(tag.to_string())
+            .or_insert(vec![])
             .extend(val_vector);
     }
 }
