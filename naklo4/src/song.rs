@@ -3,7 +3,7 @@ use std::path::Path;
 use std::path::PathBuf;
 use thiserror::Error;
 
-use crate::value::{AddTag, SongTagValueStore, ValueType};
+use crate::value::{AddTag, SongTagValueStore, HomogeneousTagValueStore, ValueType};
 
 #[derive(Error, Debug, PartialEq)]
 pub enum SongError {
@@ -111,7 +111,7 @@ pub fn from(paths: &Vec<PathBuf>) -> SongResult<Vec<Song>> {
 pub struct LintResult {
     title_lints: Vec<SongError>,
     homogeneity_lints: Vec<SongError>,
-    homogeneous_tags: SongTagValueStore,
+    homogeneous_tags: HomogeneousTagValueStore,
 }
 
 impl LintResult {
@@ -149,16 +149,16 @@ impl LintResult {
                 .or_insert(0) += 1;
             }
         }
-        let mut homogeneous_tags = SongTagValueStore::new();
+        let mut homogeneous_tags = HomogeneousTagValueStore::new();
         for (tag, map) in tags_to_values_to_counts {
             for (value, count) in map.iter() {
                 if *count != songs.len() {
                     nonhomogeneous_tags.insert(tag);
                 }
             }
-            homogeneous_tags.add(
-                tag,
-                &ValueType::Multiple(map.iter().next().unwrap().0.to_vec()),
+            homogeneous_tags.0.insert(
+                tag.to_string(),
+                map.iter().next().unwrap().0.to_vec(),
             );
         }
         Self {

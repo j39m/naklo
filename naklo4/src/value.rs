@@ -3,6 +3,7 @@
 // trait to provide a rendezvous for the control file and song modules.
 
 use serde::Deserialize;
+use std::collections::BTreeMap;
 
 // The `#[serde(untagged)]` is load-bearing here. Without this, serde
 // would expect the variant names directly in the YAML. Something like:
@@ -55,5 +56,13 @@ impl AddTag for SongTagValueStore {
             .get_mut(tag)
             .expect("was inserted")
             .extend(val_vector);
+    }
+}
+
+pub struct HomogeneousTagValueStore(pub BTreeMap<String, Vec<String>>);
+
+impl HomogeneousTagValueStore {
+    pub fn new() -> Self {
+        Self(BTreeMap::new())
     }
 }
