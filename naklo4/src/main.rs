@@ -58,10 +58,12 @@ fn main_impl(cli: Cli) -> Result<(), ErrorPassthrough> {
         return Ok(crate::song::apply(songs, cli.preserve_existing, only)?);
     }
 
-    lint.title_lints.into_iter().for_each(|e| println!("{e}"));
+    lint.title_lints
+        .into_iter()
+        .for_each(|e| println!("LINT: {e}"));
     lint.homogeneity_lints
         .into_iter()
-        .for_each(|e| println!("{e}"));
+        .for_each(|e| println!("LINT: {e}"));
     println!("{}", lint.homogeneous_tags);
     songs.into_iter().for_each(|s| println!("{s}"));
     Ok(())
