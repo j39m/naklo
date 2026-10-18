@@ -108,31 +108,22 @@ impl Song {
         Ok(())
     }
 
-    fn apply<'py>(
-        &self,
-        py: Python<'py>,
-        preserve_existing: bool,
-        track_number: usize,
-        total_tracks: usize,
-    ) -> SongResult<()> {
+    fn add_track_numbering(&mut self, track: usize, total_tracks: usize) {
+        if self.tags.get("tracknumber").is_none() {
+            self.add("tracknumber", &ValueType::Single(track.to_string()));
+        }
+        if self.tags.get("tracktotal").is_none() {
+            self.add("tracktotal", &ValueType::Single(total_tracks.to_string()));
+        }
+    }
+
+    fn apply<'py>(&self, py: Python<'py>, preserve_existing: bool) -> SongResult<()> {
         let mutagen_object = (self.mutagen_object_getter)(py, &self.path)?;
         if !preserve_existing {
             mutagen_object.call_method0("clear")?;
         }
         for (tag, values) in self.tags.0.iter() {
             mutagen_object.call_method1("__setitem__", (tag, values))?;
-        }
-        if self.tags.get("tracknumber").is_none() {
-            mutagen_object.call_method1(
-                "__setitem__",
-                ("tracknumber", vec![track_number.to_string()]),
-            )?;
-        }
-        if self.tags.get("tracktotal").is_none() {
-            mutagen_object.call_method1(
-                "__setitem__",
-                ("tracktotal", vec![total_tracks.to_string()]),
-            )?;
         }
         mutagen_object.call_method0("save")?;
         Ok(())
@@ -160,16 +151,20 @@ impl fmt::Display for Song {
 }
 
 pub fn apply(
-    songs: Vec<Song>,
+    mut songs: Vec<Song>,
     preserve_existing: bool,
     only: Option<Vec<usize>>,
 ) -> SongResult<()> {
     let total_songs = songs.len();
+    songs
+        .iter_mut()
+        .enumerate()
+        .for_each(|(zero_indexed, song)| song.add_track_numbering(zero_indexed + 1, total_songs));
     Python::initialize();
     if let Some(span) = only {
         return Python::attach(|py| {
             for one_indexed in span {
-                songs[one_indexed - 1].apply(py, preserve_existing, one_indexed, total_songs)?;
+                songs[one_indexed - 1].apply(py, preserve_existing)?;
             }
             Ok(())
         });
@@ -177,10 +172,7 @@ pub fn apply(
     Python::attach(|py| {
         songs
             .into_iter()
-            .enumerate()
-            .map(|(zero_indexed, song)| {
-                song.apply(py, preserve_existing, zero_indexed + 1, total_songs)
-            })
+            .map(|song| song.apply(py, preserve_existing))
             .collect()
     })
 }
